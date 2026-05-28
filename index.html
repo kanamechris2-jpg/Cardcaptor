@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>魔法占卜桌 - 占星貓輪盤手感版</title>
+    <title>魔法占卜桌 - 完美修復版</title>
     <style>
         :root {
             --primary: #ff79c6;
@@ -11,28 +11,27 @@
             --gold: #ffb86c;
             --global-scale: 1;
             
-            /* 💻 電腦版尺寸基準 */
-            --card-w: 68px;
-            --card-h: 128px;
-            --fan-card-w: 60px;   
-            --fan-card-h: 115px;
-            --wheel-radius: 120vw; /* 巨大圓盤半徑 */
+            /* 💻 預設電腦版尺寸（使用固定 px，拒絕萬惡的 vw/vh 飄移） */
+            --card-w: 70px;
+            --card-h: 130px;
+            --fan-card-w: 65px;   
+            --fan-card-h: 120px;
+            --wheel-radius: 900px; /* 固定的超大隱形圓盤半徑 */
         }
 
-        /* 📱 手機版專屬優化 */
+        /* 📱 手機版專屬微調（依然保持固定 px 錨定） */
         @media (max-width: 767px) {
             :root {
                 --card-w: 95px;
                 --card-h: 180px;
-                --fan-card-w: 78px;
+                --fan-card-w: 80px;
                 --fan-card-h: 150px;
-                --wheel-radius: 140vw; /* 手機上圓盤半徑更大，弧度更平緩 */
+                --wheel-radius: 700px; /* 手機上圓盤半徑稍微縮小，弧度更貼合手機底部 */
             }
         }
 
         body {
             margin: 0; padding: 0;
-            /* 🌟 背景圖案修正 */
             background-image: url('6135163.png');
             background-size: cover;
             background-position: center center;
@@ -41,10 +40,9 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             overflow: hidden; height: 100vh; width: 100vw;
             user-select: none; -webkit-user-select: none;
-            touch-action: none; /* 全面接管觸控 */
+            touch-action: none;
         }
 
-        /* 背景微暗濾鏡 */
         body::before {
             content: ''; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(26, 9, 51, 0.15); z-index: 1; pointer-events: none;
@@ -57,7 +55,7 @@
             transition: transform 0.2s ease-out;
         }
 
-        /* 頂部控制項 */
+        /* 頂部介面 */
         #top-bar { position: fixed; top: 15px; right: 15px; z-index: 2000; display: flex; gap: 10px; }
         .icon-btn {
             background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(8px);
@@ -67,7 +65,6 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: all 0.2s;
         }
 
-        /* 記牌器 */
         #counter-board {
             position: fixed; top: 15px; left: 15px; z-index: 2000;
             background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px);
@@ -95,7 +92,6 @@
         }
         .side-btn { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 10px; }
 
-        /* 功能設置 */
         #modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.4); z-index: 3000; display: none; align-items: center; justify-content: center; }
         #setting-modal { background: #e2d6b5; color: #4a2e1b; width: 300px; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); position: relative; border: 2px solid #bda47e; font-weight: 500; }
         .modal-close { position: absolute; top: 12px; right: 15px; font-size: 20px; cursor: pointer; font-weight: bold; color: #8b0000; }
@@ -104,20 +100,19 @@
         .switch-btn { background: #ccc; border: 1px solid #999; padding: 4px 10px; border-radius: 12px; font-size: 11px; cursor: pointer; font-weight: bold; color: #666; }
         .switch-btn.on { background: #722f37; color: white; }
 
-        /* 桌面區域 */
+        /* 🔮 占卜桌面區域 */
         #desk { 
             width: 100vw; height: 100vh; 
             position: absolute; top: 0; left: 0; 
             z-index: 10; 
-            overflow: hidden; /* 桌面卡牌不切邊 */
         }
 
-        /* 🌟 桌面自由拖拽卡牌樣式 */
+        /* 桌面自由拖拽的卡牌 */
         .card { 
             width: var(--card-w); height: var(--card-h); 
             position: absolute; 
             perspective: 1000px; 
-            touch-action: none; /* interact.js 必需 */
+            touch-action: none;
             cursor: grab; 
             z-index: 20;
             will-change: transform;
@@ -141,73 +136,70 @@
         .card-back { background-color: #8b1e3f; }
         .card-front { transform: rotateY(180deg); }
 
-        /* 🌟【全新核心】巨大隱形圓盤容器（手機電腦皆可轉動） */
+        /* 🌟【關鍵修復】巨大隱形圓盤容器 —— 永遠將圓心固定在螢幕下緣 */
         #deck-fan-container {
             position: fixed; 
-            /* 圓心設在螢幕下方偏遠處 */
-            bottom: calc(var(--wheel-radius) * -1 + 45px); 
+            /* 圓心精確鎖定：y軸永遠在螢幕底線下方 (半徑 - 40px) 的位置，確保不論螢幕多寬都不會往上亂飛 */
+            bottom: calc(var(--wheel-radius) * -1 + 40px); 
             left: 50%; 
             width: calc(var(--wheel-radius) * 2); 
             height: calc(var(--wheel-radius) * 2); 
-            transform: translateX(-50%) rotate(0deg); /* 這裡將由 JS 控制旋轉 angles */
+            transform: translateX(-50%) rotate(0deg); 
             z-index: 100; 
-            pointer-events: none; /* 容器不擋桌面，但卡牌本身會開啟 */
+            pointer-events: none; 
             will-change: transform;
-            transition: transform 0.1s ease-out; /* 增加絲滑慣性 */
+            transition: transform 0.1s ease-out;
         }
         
-        /* 🌟 圓盤發散的卡牌樣式 */
+        /* 圓盤上的發散卡牌 */
         .fan-card {
             position: absolute;
-            /* 卡牌旋轉圓心設在巨大隱形圓盤的中心 */
-            transform-origin: center center;
+            transform-origin: center center; /* 繞著大圓盤中心旋轉 */
             top: 0; left: 50%;
             width: var(--fan-card-w); height: var(--fan-card-h); 
             background-size: cover; background-position: center;
             border: 2px solid var(--gold); border-radius: 6px; 
             box-shadow: 0 -3px 10px rgba(0,0,0,0.6); 
-            touch-action: none; /* 脫離系統滑動 */
-            pointer-events: auto; /* 開啟卡片自身的觸控監聽 */
+            touch-action: none; 
+            pointer-events: auto; 
             cursor: pointer;
             
-            /* 預設初始位置：擺正，並推到巨大圓盤的邊緣處 */
-            transform: translate(-50%, 0) rotate(var(--rot)) translateY(20px);
-            transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+            /* 將卡片推至大圓盤的外邊緣，並套用初始扇形角度 */
+            transform: translate(-50%, 0) rotate(var(--rot)) translateY(25px);
+            transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1);
         }
         
-        /* 🌟【核心修正】單擊激活狀態（彈出、提升層級、顯示完整數字） */
+        /* 🌟【彈起修復】卡牌被單擊激活時的狀態 */
         .fan-card.active {
-            z-index: 9999 !important; /* 提升層級到整幅牌最上方 */
-            /* 保持原角度，往外推得更遠，並擺正角度 */
-            transform: translate(-50%, 0) rotate(var(--rot)) translateY(-55px) rotate(calc(var(--rot) * -1)) scale(1.18) !important;
+            z-index: 9999 !important; 
+            /* 往上彈出，同時抵消旋轉角度擺正，並且向上多平移，確保數字和卡面在任何裝置都不會被切掉 */
+            transform: translate(-50%, 0) rotate(var(--rot)) translateY(-70px) rotate(calc(var(--rot) * -1)) scale(1.2) !important;
         }
 
-        /* 🌟 數字完美出現在激活用卡牌正上方（不再被切邊） */
+        /* 完美浮現在卡片頭頂的獨立數字 */
         .fan-card.active::after {
             content: attr(data-display-index);
             position: absolute; 
-            top: -48px; /* 確保浮現在卡片「頭頂」上方 */
+            top: -45px; 
             left: 50%; 
             transform: translateX(-50%);
             color: #ffffff; 
             font-size: 28px; 
             font-weight: bold; 
-            font-family: -apple-system, sans-serif;
             text-shadow: 0 2px 10px rgba(0,0,0,1), 0 0 5px rgba(0,0,0,0.6); 
             pointer-events: none;
             z-index: 10000;
-            white-space: nowrap;
         }
 
-        /* 🌟 抽走後原地留白，達到真實缺口體驗 */
+        /* 抽走後原地留空隙 */
         .fan-card.drawn {
             visibility: hidden;
             pointer-events: none !important;
         }
         
-        /* 🌟 手機和電腦底部可劃動區域提示 */
+        /* 接管底部觸控/滑鼠劃動的隱形感應區（調高高度至220px確保好滑） */
         #wheel-touch-zone {
-            position: fixed; bottom: 0; left: 0; width: 100vw; height: 180px; z-index: 90; pointer-events: auto;
+            position: fixed; bottom: 0; left: 0; width: 100vw; height: 220px; z-index: 90; pointer-events: auto;
         }
     </style>
 </head>
@@ -286,13 +278,12 @@
         const cardIndexInput = document.getElementById('card-index'); const zoomContainer = document.getElementById('zoom-container');
         const touchZone = document.getElementById('wheel-touch-zone');
 
-        // 🌟【全新 JS 核心】圓盤物理轉動控制器
         let currentWheelAngle = 0;
         let isSpinningWheel = false;
         let wheelStartAngle = 0;
         let wheelStartX = 0;
 
-        // 接管底部區域的觸控/滑鼠劃動，轉換為圓盤旋轉
+        // 接管底部區域的拖曳，轉化為繞圓心的物理旋轉
         interact(touchZone).draggable({
             listeners: {
                 start(event) {
@@ -302,30 +293,25 @@
                 },
                 move(event) {
                     if (!isSpinningWheel) return;
-                    // 將水平移動距離 (PX) 轉換為圓盤旋轉角度 (Deg)
-                    // pxToDegRate 可根據手感調整，手機螢幕越窄，此值需越大
-                    const pxToDegRate = window.innerWidth < 768 ? 0.35 : 0.18;
+                    // 電腦端與手機端敏感度微調
+                    const pxToDegRate = window.innerWidth < 768 ? 0.32 : 0.15;
                     const deltaX = event.pageX - wheelStartX;
                     currentWheelAngle = wheelStartAngle + (deltaX * pxToDegRate);
                     
-                    // 🌟 核心轉動：更新隱形巨大圓盤的旋轉角度
+                    // 核心物理轉動
                     deckFanContainer.style.transform = `translateX(-50%) rotate(${currentWheelAngle}deg)`;
                 },
-                end(event) {
-                    isSpinningWheel = false;
-                    // 可以在這裡加入慣性滑動邏輯 (Flick)
-                }
+                end() { isSpinningWheel = false; }
             }
         });
 
-        // 🌟 初始化全體生成，抽出的卡牌原地隱形留缺口
         function renderDeckFan() {
             deckFanContainer.innerHTML = '';
             const totalCards = currentActiveDeck.length;
             if (totalCards === 0) return;
 
-            // 微調扇形跨距，確保鋪滿整個底部弧度
-            const maxSpreadAngle = window.innerWidth < 768 ? 58 : 48; 
+            // 調整扇形發散弧度，電腦版與手機版均勻鋪開
+            const maxSpreadAngle = window.innerWidth < 768 ? 62 : 42; 
             const angleStep = (maxSpreadAngle * 2) / (totalCards - 1 || 1);
             
             for (let i = 0; i < totalCards; i++) {
@@ -334,14 +320,11 @@
                 fanCard.style.backgroundImage = `url('${currentActiveBack}')`;
                 fanCard.style.zIndex = i;
                 
-                // 🌟 真實精確的獨立數字對應（編號永不改變）
                 fanCard.setAttribute('data-display-index', i + 1);
                 
-                // 計算每張牌相對於圓盤的初始角度（放射狀排列）
                 const currentAngle = -maxSpreadAngle + (i * angleStep);
                 fanCard.style.setProperty('--rot', `${currentAngle}deg`);
                 
-                // 🌟 如果已經被抽上桌，不重新排版，直接隱形留下空缺！
                 if (onDeskCards.includes(i)) {
                     fanCard.classList.add('drawn');
                 } else {
@@ -352,80 +335,67 @@
             }
         }
 
-        // 🌟 核心修正：實作「兩階段抽牌」與滑動相容
         function makeFanCardInteractive(element, actualIndex) {
             let currentX = 0; let currentY = 0;
             let dragStarted = false;
 
-            // 1. 單擊事件：負責切換彈起狀態（Activated）
+            // 1. 點擊彈起/縮回
             element.addEventListener('click', (e) => {
-                e.stopPropagation(); // 阻止事件冒泡到 TouchZone
-                
-                if (isSpinningWheel) return; // 如果圓盤正在轉動，不觸發激活
+                e.stopPropagation();
+                if (isSpinningWheel) return;
 
-                // 如果已經激活，再次點擊就縮回
                 if (element.classList.contains('active')) {
                     element.classList.remove('active');
                 } else {
-                    // 先清除其他卡牌的激活狀態
                     document.querySelectorAll('.fan-card').forEach(c => c.classList.remove('active'));
                     element.classList.add('active');
                 }
             });
 
-            // 2. 拖拽事件：負責把激活動牌拉上桌面
+            // 2. 處理從彈起狀態拉上桌面的手感
             interact(element).draggable({
                 listeners: {
                     start(event) {
-                        // 🌟 核心邏輯：如果這張牌還沒點擊彈起激活，禁止拖拽（讓位給圓盤轉動）
                         if (!event.target.classList.contains('active')) {
                             dragStarted = false;
-                            isSpinningWheel = true; // 轉為啟動圓盤轉動模式
+                            isSpinningWheel = true;
                             wheelStartAngle = currentWheelAngle;
                             wheelStartX = event.pageX;
                             return;
                         }
                         dragStarted = true;
-                        isSpinningWheel = false; // 停止圓盤轉動模式
-                        event.target.style.transition = 'none'; // 拖拽時取消過渡動畫
+                        isSpinningWheel = false;
+                        event.target.style.transition = 'none';
                     },
                     move(event) {
-                        // 情況A：正在轉動圓盤
                         if (isSpinningWheel) {
-                            const pxToDegRate = window.innerWidth < 768 ? 0.35 : 0.18;
+                            const pxToDegRate = window.innerWidth < 768 ? 0.32 : 0.15;
                             const deltaX = event.pageX - wheelStartX;
                             currentWheelAngle = wheelStartAngle + (deltaX * pxToDegRate);
                             deckFanContainer.style.transform = `translateX(-50%) rotate(${currentWheelAngle}deg)`;
                             return;
                         }
 
-                        // 情況B：正在拖拽已激活的卡牌
                         if (!dragStarted) return;
                         currentX += event.dx; currentY += event.dy;
                         
-                        // 🌟 核心修正：往上拉出一定高度後，卡牌擺正，脫離圓盤跟隨鼠標
-                        if (currentY < -20) {
-                            // 解除 rotate(var(--rot))，並端正放大
-                            event.target.style.transform = `translate(calc(-50% + ${currentX/globalScale}px), calc(0 + ${currentY/globalScale}px)) rotate(0deg) scale(1.15)`;
+                        // 往上拉出圓盤邊界後，卡牌自動轉正跟隨手指
+                        if (currentY < -15) {
+                            event.target.style.transform = `translate(calc(-50% + ${currentX/globalScale}px), calc(0px + ${currentY/globalScale}px)) rotate(0deg) scale(1.15)`;
                         }
                     },
                     end(event) {
-                        if (isSpinningWheel) {
-                            isSpinningWheel = false;
-                            return;
-                        }
+                        if (isSpinningWheel) { isSpinningWheel = false; return; }
                         if (!dragStarted) return;
                         dragStarted = false;
                         
-                        event.target.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)'; // 恢復動畫
+                        event.target.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
                         
-                        // 成功上桌判定（拉動超過一定高度）
+                        // 成功上桌觸發門檻
                         if (currentY < -60) {
                             const rect = event.target.getBoundingClientRect();
-                            // 🌟 此時將層級提升，確保自由拖拽
                             createCardOnDesk(actualIndex, rect.left / globalScale, rect.top / globalScale);
                         } else {
-                            // 失敗則彈回激活動位置
                             currentX = 0; currentY = 0;
                             event.target.style.transform = ''; 
                         }
@@ -436,7 +406,12 @@
             element.addEventListener('contextmenu', e => e.preventDefault());
         }
 
-        // 🌟 初始化選單與基本互動
+        // 點擊桌面空白處收回全部彈起的牌
+        document.getElementById('desk').addEventListener('click', () => {
+            document.querySelectorAll('.fan-card').forEach(c => c.classList.remove('active'));
+        });
+
+        // 選單及縮放控制
         document.getElementById('menu-btn').addEventListener('click', () => sidebar.classList.toggle('open'));
         document.body.addEventListener('click', (e) => { if(!sidebar.contains(e.target) && e.target.id !== 'menu-btn') sidebar.classList.remove('open'); }, true);
         document.getElementById('open-settings-btn').addEventListener('click', () => { modalOverlay.style.display = 'flex'; sidebar.classList.remove('open'); });
@@ -444,11 +419,6 @@
         document.getElementById('zoom-in-btn').addEventListener('click', () => { if (globalScale < 1.8) { globalScale += 0.1; applyZoom(); } });
         document.getElementById('zoom-out-btn').addEventListener('click', () => { if (globalScale > 0.5) { globalScale -= 0.1; applyZoom(); } });
         function applyZoom() { zoomContainer.style.transform = `scale(${globalScale})`; }
-
-        // 點擊桌面空處時，自動縮回底下所有激活動牌
-        document.getElementById('desk').addEventListener('click', () => {
-            document.querySelectorAll('.fan-card').forEach(c => c.classList.remove('active'));
-        });
 
         document.querySelectorAll('.switch-btn').forEach(btn => {
             btn.addEventListener('click', function() {
@@ -506,7 +476,7 @@
             return cardPlaceHolder;
         }
 
-        // 🌟 修正：創立自由拖拽卡牌上桌，手機電腦皆可滑動
+        // 生成桌面卡牌，確保完美自由拖曳
         function createCardOnDesk(arrayIndex, customX = null, customY = null) {
             if (onDeskCards.includes(arrayIndex)) return;
             onDeskCards.push(arrayIndex); updateCounters(); renderDeckFan(); 
@@ -521,14 +491,11 @@
 
             card.innerHTML = `<div class="card-inner"><div class="card-face card-back" style="background-image: url('${currentActiveBack}')"></div><div class="card-face card-front" style="background-image: url('${frontImg}')"></div></div>`;
             
-            // 計算置中偏移
-            const offsetW = window.innerWidth < 768 ? 47 : 34;
-            // 🌟 核心修正：將桌面上卡牌放到 desk 容器內，並給予獨立的高層級
+            const offsetW = window.innerWidth < 768 ? 47 : 35;
             card.style.left = customX !== null ? `${customX}px` : `${window.innerWidth / 2 - offsetW}px`;
             card.style.top = customY !== null ? `${customY}px` : `${window.innerHeight / 3}px`;
             
             desk.appendChild(card);
-            // 🌟 修正：開啟桌面自由拖拽
             makeDeskCardInteractive(card);
         }
 
@@ -538,23 +505,46 @@
             createCardOnDesk(num - 1); sidebar.classList.remove('open');
         });
 
-        // 🌟 開啟桌面卡牌自由拖拽與點擊翻面（手機電腦皆通用）
+        // 🌟【核心修復】完全解鎖桌面卡牌互動（支援手機多點觸控與電腦滑鼠）
         function makeDeskCardInteractive(element) {
             let x = 0; let y = 0; let isDragging = false;
             
-            // interact.js 處理電腦滑鼠與手機觸控的自由拖拽
+            // 修正：動態重設初始 transform 的平移量
+            const matrix = window.getComputedStyle(element).transform;
+            if (matrix && matrix !== 'none') {
+                const values = matrix.split('(')[1].split(')')[0].split(',');
+                x = parseFloat(values[4]) || 0;
+                y = parseFloat(values[5]) || 0;
+            }
+
             interact(element).draggable({
+                inertia: true,
                 listeners: {
-                    start(event) { event.target.style.zIndex = Date.now(); isDragging = true; },
-                    move(event) { x += event.dx; y += event.dy; event.target.style.transform = `translate(${x/globalScale}px, ${y/globalScale}px)`; },
-                    end(event) { setTimeout(() => { isDragging = false; }, 50); }
+                    start(event) { 
+                        event.target.style.zIndex = Date.now(); 
+                        isDragging = true; 
+                    },
+                    move(event) { 
+                        x += event.dx; 
+                        y += event.dy; 
+                        event.target.style.transform = `translate(${x/globalScale}px, ${y/globalScale}px)`; 
+                    },
+                    end(event) { 
+                        setTimeout(() => { isDragging = false; }, 60); 
+                    }
                 }
             });
 
-            // 處理翻面：只有在沒有拖拽時才觸發翻面
-            element.addEventListener('click', () => { if (!isDragging) element.classList.toggle('is-flipped'); });
-            // 手機端特定處理，防止觸控結束觸發 click
-            element.addEventListener('touchend', (e) => { if (!isDragging) { e.preventDefault(); element.classList.toggle('is-flipped'); } });
+            // 點擊翻牌
+            element.addEventListener('click', (e) => { 
+                if (!isDragging) element.classList.toggle('is-flipped'); 
+            });
+            element.addEventListener('touchend', (e) => { 
+                if (!isDragging) { 
+                    e.preventDefault(); 
+                    element.classList.toggle('is-flipped'); 
+                } 
+            });
         }
 
         buildDeck(); renderDeckFan();
