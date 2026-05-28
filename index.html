@@ -3,51 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>魔法占卜桌 - 數字在上方版</title>
+    <title>魔法占卜桌 - 專屬桌布絲滑版</title>
     <style>
         :root {
             --primary: #ff79c6;
-            --bg-color: #1a0933;
             --panel-bg: rgba(0, 0, 0, 0.85);
             --gold: #ffb86c;
             --global-scale: 1;
+            
+            /* 🌟 預設變數（電腦版尺寸：精緻縮小） */
+            --card-w: 68px;
+            --card-h: 128px;
+            --fan-h: 190px;
+            --fan-card-w: 58px;
+            --fan-card-h: 110px;
+        }
+
+        /* 📱 手機版專屬樣式（當螢幕寬度小於 768px 時，自動切換成適合手指操作的大尺寸） */
+        @media (max-width: 767px) {
+            :root {
+                --card-w: 95px;
+                --card-h: 180px;
+                --fan-h: 240px;
+                --fan-card-w: 76px;
+                --fan-card-h: 150px;
+            }
         }
 
         body {
             margin: 0; padding: 0;
-            background-color: var(--bg-color); 
-            background-image: radial-gradient(#3d1b5c 20%, transparent 20%), radial-gradient(#3d1b5c 20%, transparent 20%);
-            background-size: 20px 20px; background-position: 0 0, 10px 10px;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+            background-image: url('https://photo.s3.com.tw/look/Upload/BlogArticleImages/6821/20190918103057181_700_0_80.jpg');
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             overflow: hidden; height: 100vh; width: 100vw;
             user-select: none; -webkit-user-select: none;
         }
 
+        body::before {
+            content: ''; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(26, 9, 51, 0.3); z-index: 1; pointer-events: none;
+        }
+
         #zoom-container {
             width: 100vw; height: 100vh;
-            position: relative;
+            position: relative; z-index: 2;
             transform-origin: center center;
             transition: transform 0.2s ease-out;
         }
 
         /* 頂部功能鈕 */
-        #top-bar {
-            position: fixed; top: 15px; right: 15px; z-index: 2000;
-            display: flex; gap: 10px;
-        }
+        #top-bar { position: fixed; top: 15px; right: 15px; z-index: 2000; display: flex; gap: 10px; }
         .icon-btn {
-            background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(8px);
+            background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(8px);
             color: white; border: 1px solid rgba(255,255,255,0.2);
             width: 44px; height: 44px; border-radius: 50%;
             font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: all 0.2s;
         }
-        .icon-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.3); }
 
         /* 記牌器看板 */
         #counter-board {
             position: fixed; top: 15px; left: 15px; z-index: 2000;
-            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.15); padding: 8px 14px;
             border-radius: 12px; color: white; font-size: 13px; font-weight: 500;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 4px;
@@ -64,116 +84,63 @@
             display: flex; flex-direction: column; gap: 25px;
         }
         #sidebar.open { right: 0; }
-        .sidebar-header { font-size: 18px; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 5px; }
         .menu-item { display: flex; flex-direction: column; gap: 8px; }
         .menu-item label { font-size: 13px; color: #aaa; }
         select, input[type="number"] {
             background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2);
             padding: 10px; border-radius: 8px; outline: none; font-size: 14px; width: 100%; box-sizing: border-box;
         }
-        select option { background: #222; }
-        .side-btn {
-            background: var(--primary); color: white; border: none; padding: 12px;
-            border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 10px;
-        }
+        .side-btn { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 10px; }
 
-        /* 彈出功能設置小畫面 */
-        #modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.4); z-index: 3000; display: none;
-            align-items: center; justify-content: center;
-        }
-        #setting-modal {
-            background: #e2d6b5; background-image: radial-gradient(rgba(0,0,0,0.03) 1px, transparent 0); background-size: 8px 8px;
-            color: #4a2e1b; width: 300px; padding: 25px; border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6); position: relative;
-            border: 2px solid #bda47e; font-weight: 500;
-        }
+        /* 彈出設定 */
+        #modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.4); z-index: 3000; display: none; align-items: center; justify-content: center; }
+        #setting-modal { background: #e2d6b5; color: #4a2e1b; width: 300px; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); position: relative; border: 2px solid #bda47e; font-weight: 500; }
         .modal-close { position: absolute; top: 12px; right: 15px; font-size: 20px; cursor: pointer; font-weight: bold; color: #8b0000; }
         .modal-title { text-align: center; font-size: 16px; font-weight: bold; border-bottom: 1px solid #c9b99a; padding-bottom: 8px; margin-bottom: 15px; color: #722f37;}
         .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed #d3c4a4; }
-        .switch-btn { background: #ccc; border: 1px solid #999; padding: 4px 10px; border-radius: 12px; font-size: 11px; cursor: pointer; font-weight: bold; color: #666; transition: all 0.2s; }
-        .switch-btn.on { background: #722f37; color: white; border-color: #501f24; }
+        .switch-btn { background: #ccc; border: 1px solid #999; padding: 4px 10px; border-radius: 12px; font-size: 11px; cursor: pointer; font-weight: bold; color: #666; }
+        .switch-btn.on { background: #722f37; color: white; }
 
         /* 桌面區域 */
         #desk { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 10; }
 
-        /* 桌面卡牌樣式 */
-        .card {
-            width: 95px; height: 180px; position: absolute;
-            perspective: 1000px; touch-action: none; cursor: grab; z-index: 20;
-        }
-        .card-inner {
-            width: 100%; height: 100%; position: relative; transform-style: preserve-3d;
-            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1); border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-        }
+        /* 🌟 桌面卡牌樣式（改用動態變數） */
+        .card { width: var(--card-w); height: var(--card-h); position: absolute; perspective: 1000px; touch-action: none; cursor: grab; z-index: 20; }
+        .card-inner { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
         .card.is-flipped .card-inner { transform: rotateY(180deg); }
         .card.is-flipped.is-reversed .card-inner { transform: rotateY(180deg) rotateZ(180deg); }
-        .card-face {
-            position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
-            border-radius: 8px; border: 2px solid var(--gold); box-sizing: border-box;
-            background-size: cover; background-position: center;
-        }
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 8px; border: 2px solid var(--gold); box-sizing: border-box; background-size: cover; background-position: center; }
         .card-back { background-color: #8b1e3f; }
         .card-front { transform: rotateY(180deg); }
 
-        /* 底部扇形區域設定 */
+        /* 🌟 底部輪盤式滑動容器（改用動態變數） */
         #deck-fan-container {
-            position: absolute; 
-            bottom: -110px;
-            left: 50%; 
-            transform: translateX(-50%);
-            width: 920px; 
-            height: 320px;
-            display: flex; 
-            justify-content: center;
-            align-items: flex-end; 
-            z-index: 100; 
-            pointer-events: none;
+            position: fixed; bottom: 0; left: 0; width: 100vw; height: var(--fan-h); z-index: 100; 
+            overflow-x: auto; overflow-y: visible; white-space: nowrap;
+            padding: 0 42vw; box-sizing: border-box; display: flex; align-items: flex-end; padding-bottom: 20px;
+            -webkit-overflow-scrolling: touch; scrollbar-width: none; 
         }
+        #deck-fan-container::-webkit-scrollbar { display: none; }
         
-        /* 扇形單張卡片 */
         .fan-card {
-            width: 78px; 
-            height: 154px; 
-            background-size: cover; 
-            background-position: center;
-            border: 1px solid var(--gold); 
-            border-radius: 6px; 
-            position: absolute;
-            bottom: 30px; 
-            transform-origin: center 310px; 
-            cursor: grab;
-            box-shadow: 0 -3px 12px rgba(0,0,0,0.6); 
-            pointer-events: auto; 
-            touch-action: none;
-            
-            transform: rotate(var(--rot));
-            transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), bottom 0.2s;
+            display: inline-block; flex-shrink: 0; width: var(--fan-card-w); height: var(--fan-card-h); 
+            background-size: cover; background-position: center;
+            border: 2px solid var(--gold); border-radius: 6px; position: relative;
+            margin: 0 -15px; cursor: grab; box-shadow: 0 -3px 10px rgba(0,0,0,0.5); 
+            touch-action: pan-x; transform-origin: center bottom;
+            transform: rotate(var(--rot)) translateY(0); transition: transform 0.2s ease;
         }
         
-        /* 滑鼠懸停：這張卡片整體往上突出，並提到最上層 */
-        .fan-card:hover {
-            bottom: 75px;            
+        .fan-card:hover, .fan-card:active {
             z-index: 9999 !important; 
+            transform: rotate(0deg) translateY(-45px) scale(1.15);
         }
 
-        /* 🌟【數字修改：改為 top 負值，精準出現在懸停卡片的頂部上方】 */
-        .fan-card:hover::after {
+        .fan-card:hover::after, .fan-card:active::after {
             content: attr(data-display-index);
-            position: absolute;
-            top: -38px;              /* 讓數字浮現在卡片「頭頂」上方 */
-            left: 50%;
-            /* 保持水平置中，並反向旋轉抵消卡牌角度，讓數字永遠端正水平 */
-            transform: translateX(-50%) rotate(calc(-1 * var(--rot)));
-            color: #ffffff;
-            font-size: 24px;
-            font-weight: 200;        /* 完美細體 */
-            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
-            text-shadow: 0 1px 4px rgba(0,0,0,0.6);
-            pointer-events: none;
-            white-space: nowrap;
+            position: absolute; top: -38px; left: 50%; transform: translateX(-50%);
+            color: #ffffff; font-size: 22px; font-weight: bold; font-family: -apple-system, sans-serif;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.8); pointer-events: none;
         }
     </style>
 </head>
@@ -185,10 +152,10 @@
     </div>
 
     <div id="top-bar">
-        <button id="zoom-in-btn" class="icon-btn" title="放大介面">🔍＋</button>
-        <button id="zoom-out-btn" class="icon-btn" title="縮小介面">🔍－</button>
-        <button id="clear-btn" class="icon-btn" title="清空桌面">🧹</button>
-        <button id="menu-btn" class="icon-btn" title="開啟設定">⚙️</button>
+        <button id="zoom-in-btn" class="icon-btn">🔍＋</button>
+        <button id="zoom-out-btn" class="icon-btn">🔍－</button>
+        <button id="clear-btn" class="icon-btn">🧹</button>
+        <button id="menu-btn" class="icon-btn">⚙️</button>
     </div>
 
     <div id="sidebar">
@@ -208,10 +175,10 @@
             </select>
         </div>
         <div class="menu-item" style="margin-top: 10px;">
-            <label>精確指定抽牌 (輸入編號)</label>
+            <label>精確指定抽牌</label>
             <div style="display:flex; gap:8px;">
                 <input type="number" id="card-index" min="1" value="1" style="width:70px;">
-                <button id="specific-btn" class="side-btn" style="margin:0; flex:1; background:var(--gold); color:#1a0933;">指定發牌</button>
+                <button id="specific-btn" class="side-btn" style="margin:0; flex:1; background:var(--gold); color:#1a0933;">發牌</button>
             </div>
         </div>
         <button id="open-settings-btn" class="side-btn" style="background:#6272a4;">🛠️ 功能細項設置</button>
@@ -223,8 +190,8 @@
             <div class="modal-title">Decks & Cards<br><span style="font-size:12px; font-weight:normal; color:#666;">功能設置</span></div>
             <div class="toggle-row"><span>啟用記牌器</span><div id="toggle-counter" class="switch-btn on">on</div></div>
             <div class="toggle-row"><span>允許逆位卡牌</span><div id="toggle-reverse" class="switch-btn on">on</div></div>
-            <div class="toggle-row"><span>包含 The Nothing (無)</span><div id="toggle-nothing" class="switch-btn on">on</div></div>
-            <div class="toggle-row" id="nameless-row"><span id="nameless-label">包含 The Nameless (無名)</span><div id="toggle-nameless" class="switch-btn on">on</div></div>
+            <div class="toggle-row"><span>包含 The Nothing</span><div id="toggle-nothing" class="switch-btn on">on</div></div>
+            <div class="toggle-row" id="nameless-row"><span id="nameless-label">包含 The Nameless</span><div id="toggle-nameless" class="switch-btn on">on</div></div>
         </div>
     </div>
 
@@ -269,25 +236,17 @@
             }
         };
 
-        let currentActiveDeck = [];
-        let currentActiveBack = '';
-        let currentActiveBaseUrl = '';
-        let onDeskCards = []; 
-        let settings = { counter: true, reverse: true, nothing: true, nameless: true };
-        let globalScale = 1.0;
+        let currentActiveDeck = []; let currentActiveBack = ''; let currentActiveBaseUrl = ''; let onDeskCards = []; 
+        let settings = { counter: true, reverse: true, nothing: true, nameless: true }; let globalScale = 1.0;
 
-        const desk = document.getElementById('desk');
-        const deckFanContainer = document.getElementById('deck-fan-container');
-        const sidebar = document.getElementById('sidebar');
-        const modalOverlay = document.getElementById('modal-overlay');
-        const cardIndexInput = document.getElementById('card-index');
-        const zoomContainer = document.getElementById('zoom-container');
+        const desk = document.getElementById('desk'); const deckFanContainer = document.getElementById('deck-fan-container');
+        const sidebar = document.getElementById('sidebar'); const modalOverlay = document.getElementById('modal-overlay');
+        const cardIndexInput = document.getElementById('card-index'); const zoomContainer = document.getElementById('zoom-container');
         
         document.getElementById('menu-btn').addEventListener('click', () => sidebar.classList.toggle('open'));
         document.body.addEventListener('click', (e) => { if(!sidebar.contains(e.target) && e.target.id !== 'menu-btn') sidebar.classList.remove('open'); }, true);
         document.getElementById('open-settings-btn').addEventListener('click', () => { modalOverlay.style.display = 'flex'; sidebar.classList.remove('open'); });
         document.getElementById('modal-close-btn').addEventListener('click', () => modalOverlay.style.display = 'none');
-        modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) modalOverlay.style.display = 'none'; });
 
         document.getElementById('zoom-in-btn').addEventListener('click', () => { if (globalScale < 1.8) { globalScale += 0.1; applyZoom(); } });
         document.getElementById('zoom-out-btn').addEventListener('click', () => { if (globalScale > 0.5) { globalScale -= 0.1; applyZoom(); } });
@@ -310,83 +269,65 @@
         function buildDeck() {
             const selectedDeck = document.getElementById('deck-select').value;
             let tempCards = [];
-
             if (selectedDeck === 'clow') {
                 document.getElementById('nameless-row').style.display = 'none';
-                tempCards = [...coreClowCards];
-                currentActiveBaseUrl = clowBaseUrl;
+                tempCards = [...coreClowCards]; currentActiveBaseUrl = clowBaseUrl;
                 currentActiveBack = clowBaseUrl + encodeURIComponent('0 Back - Clow.png');
                 if (settings.nothing) tempCards.push("53 B - Nothing.png");
             } else {
                 document.getElementById('nameless-row').style.display = 'flex';
-                tempCards = [...coreSakuraCards];
-                currentActiveBaseUrl = sakuraBaseUrl;
+                tempCards = [...coreSakuraCards]; currentActiveBaseUrl = sakuraBaseUrl;
                 currentActiveBack = sakuraBaseUrl + encodeURIComponent('0 Back - Sak.png');
-
-                if (settings.nothing && settings.nameless) {
-                    document.getElementById('nameless-label').textContent = "The Nameless ➔ 融合為 Hope";
-                    tempCards.push("55 - Hope 2.png");
-                } else {
-                    document.getElementById('nameless-label').textContent = "The Nameless (無名)";
+                if (settings.nothing && settings.nameless) { tempCards.push("55 - Hope 2.png"); } 
+                else {
                     if (settings.nothing) tempCards.push("53 B - Nothing 2.png");
                     if (settings.nameless) tempCards.push("54 - Nameless.png");
                 }
             }
-            currentActiveDeck = tempCards;
-            cardIndexInput.max = currentActiveDeck.length;
-            updateCounters();
+            currentActiveDeck = tempCards; cardIndexInput.max = currentActiveDeck.length; updateCounters();
         }
 
         function renderDeckFan() {
             deckFanContainer.innerHTML = '';
             let availableIndices = [];
-            for (let i = 0; i < currentActiveDeck.length; i++) {
-                if (!onDeskCards.includes(i)) availableIndices.push(i);
-            }
-
+            for (let i = 0; i < currentActiveDeck.length; i++) { if (!onDeskCards.includes(i)) availableIndices.push(i); }
             const totalAvailable = availableIndices.length;
             if (totalAvailable === 0) return;
 
-            const maxVisible = Math.min(totalAvailable, 35); 
-            const angleStep = maxVisible > 1 ? 50 / (maxVisible - 1) : 0; 
-            const startAngle = -25; 
-
-            for (let i = 0; i < maxVisible; i++) {
+            const angleStep = 1.0; const midIndex = totalAvailable / 2;
+            for (let i = 0; i < totalAvailable; i++) {
                 const actualIndex = availableIndices[i];
                 const fanCard = document.createElement('div');
                 fanCard.classList.add('fan-card');
                 fanCard.style.backgroundImage = `url('${currentActiveBack}')`;
                 fanCard.style.zIndex = i;
-
-                const logicDisplayNumber = totalAvailable - i;
-                fanCard.setAttribute('data-display-index', logicDisplayNumber);
+                fanCard.setAttribute('data-display-index', totalAvailable - i);
                 
-                const currentAngle = startAngle + (i * angleStep);
+                const currentAngle = (i - midIndex) * angleStep;
                 fanCard.style.setProperty('--rot', `${currentAngle}deg`);
-                
                 makeFanCardDraggable(fanCard, actualIndex);
                 deckFanContainer.appendChild(fanCard);
             }
         }
 
         function makeFanCardDraggable(element, actualIndex) {
-            let currentX = 0; let currentY = 0;
+            let currentX = 0; let currentY = 0; let isDraggingVertically = false;
             interact(element).draggable({
                 listeners: {
+                    start(event) { isDraggingVertically = false; },
                     move(event) {
-                        currentX += event.dx;
-                        currentY += event.dy;
-                        event.target.style.transform = `translate(${currentX/globalScale}px, ${currentY/globalScale}px) rotate(0deg)`;
-                        event.target.style.zIndex = 9999;
+                        currentX += event.dx; currentY += event.dy;
+                        if (Math.abs(currentY) > Math.abs(currentX) || isDraggingVertically) {
+                            isDraggingVertically = true;
+                            event.target.style.transform = `translate(${currentX/globalScale}px, ${currentY/globalScale}px) rotate(0deg)`;
+                            event.target.style.zIndex = 9999;
+                        } else { currentX = 0; currentY = 0; }
                     },
                     end(event) {
-                        if (currentY < -120) {
+                        if (currentY < -60) {
                             const rect = event.target.getBoundingClientRect();
                             createCardOnDesk(actualIndex, rect.left / globalScale, rect.top / globalScale);
-                        } else {
-                            event.target.style.transform = '';
-                            renderDeckFan();
-                        }
+                        } else { event.target.style.transform = ''; renderDeckFan(); }
                     }
                 }
             });
@@ -397,13 +338,7 @@
             document.getElementById('count-remain').textContent = currentActiveDeck.length - onDeskCards.length;
         }
 
-        function resetTable() {
-            desk.innerHTML = '';
-            onDeskCards = [];
-            buildDeck();
-            renderDeckFan();
-        }
-
+        function resetTable() { desk.innerHTML = ''; onDeskCards = []; buildDeck(); renderDeckFan(); }
         document.getElementById('deck-select').addEventListener('change', resetTable);
         document.getElementById('variant-select').addEventListener('change', resetTable);
         document.getElementById('clear-btn').addEventListener('click', resetTable);
@@ -419,14 +354,10 @@
 
         function createCardOnDesk(arrayIndex, customX = null, customY = null) {
             if (onDeskCards.includes(arrayIndex)) return;
-
-            onDeskCards.push(arrayIndex);
-            updateCounters();
-            renderDeckFan(); 
+            onDeskCards.push(arrayIndex); updateCounters(); renderDeckFan(); 
 
             const finalCardName = getRealCardName(arrayIndex);
             const frontImg = currentActiveBaseUrl + encodeURIComponent(finalCardName);
-
             const card = document.createElement('div');
             card.classList.add('card');
             
@@ -439,20 +370,19 @@
                     <div class="card-face card-front" style="background-image: url('${frontImg}')"></div>
                 </div>
             `;
-
-            card.style.left = customX !== null ? `${customX}px` : `${window.innerWidth / 2 - 47}px`;
-            card.style.top = customY !== null ? `${customY}px` : `${window.innerHeight / 2 - 120}px`;
-
+            
+            // 計算置中偏移
+            const offsetW = window.innerWidth < 768 ? 47 : 34;
+            card.style.left = customX !== null ? `${customX}px` : `${window.innerWidth / 2 - offsetW}px`;
+            card.style.top = customY !== null ? `${customY}px` : `${window.innerHeight / 3}px`;
             desk.appendChild(card);
             makeDeskCardInteractive(card);
         }
 
         document.getElementById('specific-btn').addEventListener('click', () => {
             let num = parseInt(cardIndexInput.value);
-            if(isNaN(num) || num < 1) num = 1;
-            if(num > currentActiveDeck.length) num = currentActiveDeck.length;
-            createCardOnDesk(num - 1);
-            sidebar.classList.remove('open');
+            if(isNaN(num) || num < 1) num = 1; if(num > currentActiveDeck.length) num = currentActiveDeck.length;
+            createCardOnDesk(num - 1); sidebar.classList.remove('open');
         });
 
         function makeDeskCardInteractive(element) {
@@ -460,11 +390,7 @@
             interact(element).draggable({
                 listeners: {
                     start(event) { event.target.style.zIndex = Date.now(); isDragging = true; },
-                    move(event) { 
-                        x += event.dx; 
-                        y += event.dy; 
-                        event.target.style.transform = `translate(${x/globalScale}px, ${y/globalScale}px)`; 
-                    },
+                    move(event) { x += event.dx; y += event.dy; event.target.style.transform = `translate(${x/globalScale}px, ${y/globalScale}px)`; },
                     end(event) { setTimeout(() => { isDragging = false; }, 50); }
                 }
             });
@@ -472,8 +398,7 @@
             element.addEventListener('touchend', (e) => { if (!isDragging) { e.preventDefault(); element.classList.toggle('is-flipped'); } });
         }
 
-        buildDeck();
-        renderDeckFan();
+        buildDeck(); renderDeckFan();
     </script>
 </body>
 </html>
