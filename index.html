@@ -2,8 +2,8 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>魔法占卜桌 - 終極實感版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>魔法占卜桌 - 占星貓輪盤手感版</title>
     <style>
         :root {
             --primary: #ff79c6;
@@ -11,28 +11,28 @@
             --gold: #ffb86c;
             --global-scale: 1;
             
-            /* 💻 電腦版尺寸 */
+            /* 💻 電腦版尺寸基準 */
             --card-w: 68px;
             --card-h: 128px;
-            --fan-card-w: 64px;   
-            --fan-card-h: 120px;
-            --wheel-radius: 110vw; 
-            --wheel-bottom: -102vw; 
+            --fan-card-w: 60px;   
+            --fan-card-h: 115px;
+            --wheel-radius: 120vw; /* 巨大圓盤半徑 */
         }
 
+        /* 📱 手機版專屬優化 */
         @media (max-width: 767px) {
             :root {
                 --card-w: 95px;
                 --card-h: 180px;
                 --fan-card-w: 78px;
                 --fan-card-h: 150px;
-                --wheel-radius: 130vw;
-                --wheel-bottom: -118vw;
+                --wheel-radius: 140vw; /* 手機上圓盤半徑更大，弧度更平緩 */
             }
         }
 
         body {
             margin: 0; padding: 0;
+            /* 🌟 背景圖案修正 */
             background-image: url('6135163.png');
             background-size: cover;
             background-position: center center;
@@ -41,11 +41,13 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             overflow: hidden; height: 100vh; width: 100vw;
             user-select: none; -webkit-user-select: none;
+            touch-action: none; /* 全面接管觸控 */
         }
 
+        /* 背景微暗濾鏡 */
         body::before {
             content: ''; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(26, 9, 51, 0.12); z-index: 1; pointer-events: none;
+            background: rgba(26, 9, 51, 0.15); z-index: 1; pointer-events: none;
         }
 
         #zoom-container {
@@ -55,6 +57,7 @@
             transition: transform 0.2s ease-out;
         }
 
+        /* 頂部控制項 */
         #top-bar { position: fixed; top: 15px; right: 15px; z-index: 2000; display: flex; gap: 10px; }
         .icon-btn {
             background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(8px);
@@ -64,6 +67,7 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: all 0.2s;
         }
 
+        /* 記牌器 */
         #counter-board {
             position: fixed; top: 15px; left: 15px; z-index: 2000;
             background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px);
@@ -73,6 +77,7 @@
         }
         #counter-board span { color: var(--gold); font-weight: bold; }
 
+        /* 側邊設定 */
         #sidebar {
             position: fixed; top: 0; right: -280px; width: 260px; height: 100vh;
             background: var(--panel-bg); backdrop-filter: blur(15px);
@@ -90,6 +95,7 @@
         }
         .side-btn { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 10px; }
 
+        /* 功能設置 */
         #modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.4); z-index: 3000; display: none; align-items: center; justify-content: center; }
         #setting-modal { background: #e2d6b5; color: #4a2e1b; width: 300px; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); position: relative; border: 2px solid #bda47e; font-weight: 500; }
         .modal-close { position: absolute; top: 12px; right: 15px; font-size: 20px; cursor: pointer; font-weight: bold; color: #8b0000; }
@@ -98,80 +104,110 @@
         .switch-btn { background: #ccc; border: 1px solid #999; padding: 4px 10px; border-radius: 12px; font-size: 11px; cursor: pointer; font-weight: bold; color: #666; }
         .switch-btn.on { background: #722f37; color: white; }
 
-        #desk { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 10; }
+        /* 桌面區域 */
+        #desk { 
+            width: 100vw; height: 100vh; 
+            position: absolute; top: 0; left: 0; 
+            z-index: 10; 
+            overflow: hidden; /* 桌面卡牌不切邊 */
+        }
 
-        .card { width: var(--card-w); height: var(--card-h); position: absolute; perspective: 1000px; touch-action: none; cursor: grab; z-index: 20; }
-        .card-inner { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+        /* 🌟 桌面自由拖拽卡牌樣式 */
+        .card { 
+            width: var(--card-w); height: var(--card-h); 
+            position: absolute; 
+            perspective: 1000px; 
+            touch-action: none; /* interact.js 必需 */
+            cursor: grab; 
+            z-index: 20;
+            will-change: transform;
+        }
+        .card-inner { 
+            width: 100%; height: 100%; 
+            position: relative; 
+            transform-style: preserve-3d; 
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1); 
+            border-radius: 8px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); 
+        }
         .card.is-flipped .card-inner { transform: rotateY(180deg); }
         .card.is-flipped.is-reversed .card-inner { transform: rotateY(180deg) rotateZ(180deg); }
-        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 8px; border: 2px solid var(--gold); box-sizing: border-box; background-size: cover; background-position: center; }
+        .card-face { 
+            position: absolute; width: 100%; height: 100%; 
+            backface-visibility: hidden; border-radius: 8px; 
+            border: 2px solid var(--gold); box-sizing: border-box; 
+            background-size: cover; background-position: center; 
+        }
         .card-back { background-color: #8b1e3f; }
         .card-front { transform: rotateY(180deg); }
 
-        /* 🌟 滾動滾輪外殼：實現真正的左右滑動撥弄 */
-        #wheel-scroll-wrapper {
-            position: fixed;
-            bottom: 0; left: 0;
-            width: 100vw; height: 260px;
-            overflow-x: auto; overflow-y: hidden;
-            z-index: 100;
-            pointer-events: auto;
-            scrollbar-width: none; /* 隱藏捲軸 */
-        }
-        #wheel-scroll-wrapper::-webkit-scrollbar { display: none; }
-
-        /* 滾動軌道內部的巨大容器 */
-        #wheel-scroll-content {
-            width: 160vw; /* 給予牌堆左右滑動的延伸空間 */
-            height: 100%;
-            position: relative;
-            margin: 0 auto;
-            pointer-events: none;
-        }
-
-        /* 🌟 圓盤容器 */
+        /* 🌟【全新核心】巨大隱形圓盤容器（手機電腦皆可轉動） */
         #deck-fan-container {
-            position: absolute; 
-            bottom: var(--wheel-bottom); 
+            position: fixed; 
+            /* 圓心設在螢幕下方偏遠處 */
+            bottom: calc(var(--wheel-radius) * -1 + 45px); 
             left: 50%; 
-            width: var(--wheel-radius); 
-            height: var(--wheel-radius); 
-            transform: translateX(-50%);
-            pointer-events: none;
+            width: calc(var(--wheel-radius) * 2); 
+            height: calc(var(--wheel-radius) * 2); 
+            transform: translateX(-50%) rotate(0deg); /* 這裡將由 JS 控制旋轉 angles */
+            z-index: 100; 
+            pointer-events: none; /* 容器不擋桌面，但卡牌本身會開啟 */
+            will-change: transform;
+            transition: transform 0.1s ease-out; /* 增加絲滑慣性 */
         }
         
-        /* 🌟 扇形卡牌基礎樣式 */
+        /* 🌟 圓盤發散的卡牌樣式 */
         .fan-card {
             position: absolute;
-            bottom: 50%; left: 50%;
+            /* 卡牌旋轉圓心設在巨大隱形圓盤的中心 */
+            transform-origin: center center;
+            top: 0; left: 50%;
             width: var(--fan-card-w); height: var(--fan-card-h); 
             background-size: cover; background-position: center;
             border: 2px solid var(--gold); border-radius: 6px; 
-            box-shadow: 0 -4px 10px rgba(0,0,0,0.5); 
-            touch-action: none; pointer-events: auto; cursor: pointer;
-            transform-origin: center calc(var(--wheel-radius) / 2);
-            transform: translate(-50%, 50%) rotate(var(--rot)) translateY(calc(var(--wheel-radius) / -2));
-            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 -3px 10px rgba(0,0,0,0.6); 
+            touch-action: none; /* 脫離系統滑動 */
+            pointer-events: auto; /* 開啟卡片自身的觸控監聽 */
+            cursor: pointer;
+            
+            /* 預設初始位置：擺正，並推到巨大圓盤的邊緣處 */
+            transform: translate(-50%, 0) rotate(var(--rot)) translateY(20px);
+            transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);
         }
         
-        /* 🌟 點擊第一階段：卡牌往上彈起並顯示數字 */
-        .fan-card.popped {
-            z-index: 9999 !important; 
-            transform: translate(-50%, 50%) rotate(var(--rot)) translateY(calc((var(--wheel-radius) / -2) - 50px)) scale(1.15) !important;
+        /* 🌟【核心修正】單擊激活狀態（彈出、提升層級、顯示完整數字） */
+        .fan-card.active {
+            z-index: 9999 !important; /* 提升層級到整幅牌最上方 */
+            /* 保持原角度，往外推得更遠，並擺正角度 */
+            transform: translate(-50%, 0) rotate(var(--rot)) translateY(-55px) rotate(calc(var(--rot) * -1)) scale(1.18) !important;
         }
 
-        .fan-card.popped::after {
+        /* 🌟 數字完美出現在激活用卡牌正上方（不再被切邊） */
+        .fan-card.active::after {
             content: attr(data-display-index);
-            position: absolute; top: -45px; left: 50%; transform: translateX(-50%);
-            color: #ffffff; font-size: 26px; font-weight: bold; 
-            text-shadow: 0 2px 8px rgba(0,0,0,0.9), 0 0 4px rgba(0,0,0,0.5); 
-            pointer-events: none; z-index: 10000;
+            position: absolute; 
+            top: -48px; /* 確保浮現在卡片「頭頂」上方 */
+            left: 50%; 
+            transform: translateX(-50%);
+            color: #ffffff; 
+            font-size: 28px; 
+            font-weight: bold; 
+            font-family: -apple-system, sans-serif;
+            text-shadow: 0 2px 10px rgba(0,0,0,1), 0 0 5px rgba(0,0,0,0.6); 
+            pointer-events: none;
+            z-index: 10000;
+            white-space: nowrap;
         }
 
-        /* 🌟 當牌被抽走時，原地留空隙，保持佔位但隱形 */
+        /* 🌟 抽走後原地留白，達到真實缺口體驗 */
         .fan-card.drawn {
             visibility: hidden;
             pointer-events: none !important;
+        }
+        
+        /* 🌟 手機和電腦底部可劃動區域提示 */
+        #wheel-touch-zone {
+            position: fixed; bottom: 0; left: 0; width: 100vw; height: 180px; z-index: 90; pointer-events: auto;
         }
     </style>
 </head>
@@ -186,7 +222,7 @@
         <button id="zoom-in-btn" class="icon-btn">🔍＋</button>
         <button id="zoom-out-btn" class="icon-btn">🔍－</button>
         <button id="clear-btn" class="icon-btn">🧹</button>
-        <button id="menu-btn" class="icon-btn">⚙️</button>
+        <button id="menu-btn" class="icon-btn">⚙&nbsp;</button>
     </div>
 
     <div id="sidebar">
@@ -212,7 +248,7 @@
                 <button id="specific-btn" class="side-btn" style="margin:0; flex:1; background:var(--gold); color:#1a0933;">發牌</button>
             </div>
         </div>
-        <button id="open-settings-btn" class="side-btn" style="background:#6272a4;">🛠️ 功能細項設置</button>
+        <button id="open-settings-btn" class="side-btn" style="background:#6272a4;">🛠&nbsp; 功能細項設置</button>
     </div>
 
     <div id="modal-overlay">
@@ -228,49 +264,19 @@
 
     <div id="zoom-container">
         <div id="desk"></div>
-        <!-- 🌟 滾動外殼與內膽 -->
-        <div id="wheel-scroll-wrapper">
-            <div id="wheel-scroll-content">
-                <div id="deck-fan-container"></div>
-            </div>
-        </div>
+        <div id="deck-fan-container"></div>
     </div>
+    
+    <div id="wheel-touch-zone"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/interact.js/1.10.11/interact.min.js"></script>
     <script>
         const clowBaseUrl = 'https://raw.githubusercontent.com/kanamechris2-jpg/Clow-Cards-Deck/main/';
         const sakuraBaseUrl = 'https://raw.githubusercontent.com/kanamechris2-jpg/Sakura-Cards-Deck/main/';
         
-        const coreClowCards = [
-            "1 B - Windy.png", "2 - Shadow.png", "3 B - Illusion.png", "4 - Flower.png", "5 A - Mist.png", "6 - Storm.png", "7 B - Float.png", "8 - Fight.png", 
-            "9 A - Song.png", "10 - Shot.png", "11 - Sweet.png", "12 B - Freeze.png", "13 - Arrow.png", "DYNAMIC_DARK", "DYNAMIC_LIGHT", "16 - Twin.png", 
-            "17 - Wood.png", "18 - Shield.png", "19 - Power.png", "20 - Loop.png", "21 A - Mirror.png", "22 - Big.png", "23 - Change.png", "24 A - Firey.png", 
-            "25 - Voice.png", "26 B - Lock.png", "27 - Cloud.png", "28 - Rain.png", "29 B - Waterey.png", "30 - Jump.png", "31 - Silent.png", "32 - Time.png", 
-            "33 A - Return.png", "34 B - Erase.png", "35 - Dash.png", "36 - Create.png", "37 - Sleep.png", "38 - Bubbles.png", "39 - Wave.png", "40 - Sand.png", 
-            "41 - Fly.png", "42 - Thunder.png", "43 - Sword.png", "44 - Move.png", "45 A - Glow.png", "46 - Little.png", "47 A - Maze.png", "48 B - Snow.png", 
-            "49 A - Through.png", "50 A - Libra.png", "51 B - Dream.png", "52 A - Earthy.png"
-        ];
-
-        const coreSakuraCards = [
-            "1 B - Windy 2.png", "2 - Shadow 2.png", "3 B - Illusion 2.png", "4 - Flower 2.png", "5 A - Mist 2.png", "6.- Storm.png", "7 B - Float 2.png", "8 - Fight 2.png",
-            "9 A.- Song.png", "10 - Shot 2.png", "11 - Sweet 2.png", "12 B - Freeze 2.png", "13 - Arrow 2.png", "DYNAMIC_DARK", "DYNAMIC_LIGHT", "16 - Twin 2.png", 
-            "17 - Wood 2.png", "18 - Shield 2.png", "19 - Power 2.png", "20 - Loop 2.png", "DYNAMIC_MIRROR", "22 - Big 2.png", "23 - Change 2.png", "DYNAMIC_FIREY", 
-            "24 B - Firey.png", "25 - Voice 2.png", "26 B - Lock 2.png", "27 - Cloud 2.png", "28 - Rain 2.png", "29 B - Watery.png", "30 - Jump 2.png", "31 - Silent 2.png", 
-            "32 - Time 2.png", "33 A - Return 2.png", "34 A Erase.png", "35 - Dash 2.png", "36 - Create 2.png", "37 - Sleep 2.png", "38 - Bubbles 2.png", "40 - Sand 2.png", 
-            "41 - Fly 2.png", "42 - Thunder 2.png", "43 - Sword 2.png", "44 - Move 2.png", "45 A - Glow 2.png", "46 - Little 2.png", "47 A - Maze 2.png", "48 B - Snow 2.png", 
-            "49 A - Through 2.png", "50 A - Libra 2.png", "51 B - Dream 2.png", "52 A - Earthy 2.png"
-        ];
-
-        const variantsConfig = {
-            clow: {
-                A: { DYNAMIC_DARK: "14 A - Dark.png", DYNAMIC_LIGHT: "15 A - Light.png" },
-                B: { DYNAMIC_DARK: "14 B - Dark.png", DYNAMIC_LIGHT: "15 B - Light.png" }
-            },
-            sakura: {
-                A: { DYNAMIC_DARK: "14 A - Dark 2.png", DYNAMIC_LIGHT: "15 A - Light 2.png", DYNAMIC_MIRROR: "21 A - Mirror 2.png", DYNAMIC_FIREY: "24 A - Firey 2.png" },
-                B: { DYNAMIC_DARK: "14 B - Dark 2.png", DYNAMIC_LIGHT: "15 B - Light 2.png", DYNAMIC_MIRROR: "21 B - Mirror.png", DYNAMIC_FIREY: "24 B - Firey.png" }
-            }
-        };
+        const coreClowCards = ["1 B - Windy.png", "2 - Shadow.png", "3 B - Illusion.png", "4 - Flower.png", "5 A - Mist.png", "6 - Storm.png", "7 B - Float.png", "8 - Fight.png", "9 A - Song.png", "10 - Shot.png", "11 - Sweet.png", "12 B - Freeze.png", "13 - Arrow.png", "DYNAMIC_DARK", "DYNAMIC_LIGHT", "16 - Twin.png", "17 - Wood.png", "18 - Shield.png", "19 - Power.png", "20 - Loop.png", "21 A - Mirror.png", "22 - Big.png", "23 - Change.png", "24 A - Firey.png", "25 - Voice.png", "26 B - Lock.png", "27 - Cloud.png", "28 - Rain.png", "29 B - Waterey.png", "30 - Jump.png", "31 - Silent.png", "32 - Time.png", "33 A - Return.png", "34 B - Erase.png", "35 - Dash.png", "36 - Create.png", "37 - Sleep.png", "38 - Bubbles.png", "39 - Wave.png", "40 - Sand.png", "41 - Fly.png", "42 - Thunder.png", "43 - Sword.png", "44 - Move.png", "45 A - Glow.png", "46 - Little.png", "47 A - Maze.png", "48 B - Snow.png", "49 A - Through.png", "50 A - Libra.png", "51 B - Dream.png", "52 A - Earthy.png"];
+        const coreSakuraCards = ["1 B - Windy 2.png", "2 - Shadow 2.png", "3 B - Illusion 2.png", "4 - Flower 2.png", "5 A - Mist 2.png", "6.- Storm.png", "7 B - Float 2.png", "8 - Fight 2.png", "9 A.- Song.png", "10 - Shot 2.png", "11 - Sweet 2.png", "12 B - Freeze 2.png", "13 - Arrow 2.png", "DYNAMIC_DARK", "DYNAMIC_LIGHT", "16 - Twin 2.png", "17 - Wood 2.png", "18 - Shield 2.png", "19 - Power 2.png", "20 - Loop 2.png", "DYNAMIC_MIRROR", "22 - Big 2.png", "23 - Change 2.png", "DYNAMIC_FIREY", "24 B - Firey.png", "25 - Voice 2.png", "26 B - Lock 2.png", "27 - Cloud 2.png", "28 - Rain 2.png", "29 B - Watery.png", "30 - Jump 2.png", "31 - Silent 2.png", "32 - Time 2.png", "33 A - Return 2.png", "34 A Erase.png", "35 - Dash 2.png", "36 - Create 2.png", "37 - Sleep 2.png", "38 - Bubbles 2.png", "40 - Sand 2.png", "41 - Fly 2.png", "42 - Thunder 2.png", "43 - Sword 2.png", "44 - Move 2.png", "45 A - Glow 2.png", "46 - Little 2.png", "47 A - Maze 2.png", "48 B - Snow 2.png", "49 A - Through 2.png", "50 A - Libra 2.png", "51 B - Dream 2.png", "52 A - Earthy 2.png"];
+        const variantsConfig = { clow: { A: { DYNAMIC_DARK: "14 A - Dark.png", DYNAMIC_LIGHT: "15 A - Light.png" }, B: { DYNAMIC_DARK: "14 B - Dark.png", DYNAMIC_LIGHT: "15 B - Light.png" } }, sakura: { A: { DYNAMIC_DARK: "14 A - Dark 2.png", DYNAMIC_LIGHT: "15 A - Light 2.png", DYNAMIC_MIRROR: "21 A - Mirror 2.png", DYNAMIC_FIREY: "24 A - Firey 2.png" }, B: { DYNAMIC_DARK: "14 B - Dark 2.png", DYNAMIC_LIGHT: "15 B - Light 2.png", DYNAMIC_MIRROR: "21 B - Mirror.png", DYNAMIC_FIREY: "24 B - Firey.png" } } };
 
         let currentActiveDeck = []; let currentActiveBack = ''; let currentActiveBaseUrl = ''; let onDeskCards = []; 
         let settings = { counter: true, reverse: true, nothing: true, nameless: true }; let globalScale = 1.0;
@@ -278,16 +284,171 @@
         const desk = document.getElementById('desk'); const deckFanContainer = document.getElementById('deck-fan-container');
         const sidebar = document.getElementById('sidebar'); const modalOverlay = document.getElementById('modal-overlay');
         const cardIndexInput = document.getElementById('card-index'); const zoomContainer = document.getElementById('zoom-container');
-        const scrollWrapper = document.getElementById('wheel-scroll-wrapper');
+        const touchZone = document.getElementById('wheel-touch-zone');
 
+        // 🌟【全新 JS 核心】圓盤物理轉動控制器
+        let currentWheelAngle = 0;
+        let isSpinningWheel = false;
+        let wheelStartAngle = 0;
+        let wheelStartX = 0;
+
+        // 接管底部區域的觸控/滑鼠劃動，轉換為圓盤旋轉
+        interact(touchZone).draggable({
+            listeners: {
+                start(event) {
+                    isSpinningWheel = true;
+                    wheelStartAngle = currentWheelAngle;
+                    wheelStartX = event.pageX;
+                },
+                move(event) {
+                    if (!isSpinningWheel) return;
+                    // 將水平移動距離 (PX) 轉換為圓盤旋轉角度 (Deg)
+                    // pxToDegRate 可根據手感調整，手機螢幕越窄，此值需越大
+                    const pxToDegRate = window.innerWidth < 768 ? 0.35 : 0.18;
+                    const deltaX = event.pageX - wheelStartX;
+                    currentWheelAngle = wheelStartAngle + (deltaX * pxToDegRate);
+                    
+                    // 🌟 核心轉動：更新隱形巨大圓盤的旋轉角度
+                    deckFanContainer.style.transform = `translateX(-50%) rotate(${currentWheelAngle}deg)`;
+                },
+                end(event) {
+                    isSpinningWheel = false;
+                    // 可以在這裡加入慣性滑動邏輯 (Flick)
+                }
+            }
+        });
+
+        // 🌟 初始化全體生成，抽出的卡牌原地隱形留缺口
+        function renderDeckFan() {
+            deckFanContainer.innerHTML = '';
+            const totalCards = currentActiveDeck.length;
+            if (totalCards === 0) return;
+
+            // 微調扇形跨距，確保鋪滿整個底部弧度
+            const maxSpreadAngle = window.innerWidth < 768 ? 58 : 48; 
+            const angleStep = (maxSpreadAngle * 2) / (totalCards - 1 || 1);
+            
+            for (let i = 0; i < totalCards; i++) {
+                const fanCard = document.createElement('div');
+                fanCard.classList.add('fan-card');
+                fanCard.style.backgroundImage = `url('${currentActiveBack}')`;
+                fanCard.style.zIndex = i;
+                
+                // 🌟 真實精確的獨立數字對應（編號永不改變）
+                fanCard.setAttribute('data-display-index', i + 1);
+                
+                // 計算每張牌相對於圓盤的初始角度（放射狀排列）
+                const currentAngle = -maxSpreadAngle + (i * angleStep);
+                fanCard.style.setProperty('--rot', `${currentAngle}deg`);
+                
+                // 🌟 如果已經被抽上桌，不重新排版，直接隱形留下空缺！
+                if (onDeskCards.includes(i)) {
+                    fanCard.classList.add('drawn');
+                } else {
+                    makeFanCardInteractive(fanCard, i);
+                }
+                
+                deckFanContainer.appendChild(fanCard);
+            }
+        }
+
+        // 🌟 核心修正：實作「兩階段抽牌」與滑動相容
+        function makeFanCardInteractive(element, actualIndex) {
+            let currentX = 0; let currentY = 0;
+            let dragStarted = false;
+
+            // 1. 單擊事件：負責切換彈起狀態（Activated）
+            element.addEventListener('click', (e) => {
+                e.stopPropagation(); // 阻止事件冒泡到 TouchZone
+                
+                if (isSpinningWheel) return; // 如果圓盤正在轉動，不觸發激活
+
+                // 如果已經激活，再次點擊就縮回
+                if (element.classList.contains('active')) {
+                    element.classList.remove('active');
+                } else {
+                    // 先清除其他卡牌的激活狀態
+                    document.querySelectorAll('.fan-card').forEach(c => c.classList.remove('active'));
+                    element.classList.add('active');
+                }
+            });
+
+            // 2. 拖拽事件：負責把激活動牌拉上桌面
+            interact(element).draggable({
+                listeners: {
+                    start(event) {
+                        // 🌟 核心邏輯：如果這張牌還沒點擊彈起激活，禁止拖拽（讓位給圓盤轉動）
+                        if (!event.target.classList.contains('active')) {
+                            dragStarted = false;
+                            isSpinningWheel = true; // 轉為啟動圓盤轉動模式
+                            wheelStartAngle = currentWheelAngle;
+                            wheelStartX = event.pageX;
+                            return;
+                        }
+                        dragStarted = true;
+                        isSpinningWheel = false; // 停止圓盤轉動模式
+                        event.target.style.transition = 'none'; // 拖拽時取消過渡動畫
+                    },
+                    move(event) {
+                        // 情況A：正在轉動圓盤
+                        if (isSpinningWheel) {
+                            const pxToDegRate = window.innerWidth < 768 ? 0.35 : 0.18;
+                            const deltaX = event.pageX - wheelStartX;
+                            currentWheelAngle = wheelStartAngle + (deltaX * pxToDegRate);
+                            deckFanContainer.style.transform = `translateX(-50%) rotate(${currentWheelAngle}deg)`;
+                            return;
+                        }
+
+                        // 情況B：正在拖拽已激活的卡牌
+                        if (!dragStarted) return;
+                        currentX += event.dx; currentY += event.dy;
+                        
+                        // 🌟 核心修正：往上拉出一定高度後，卡牌擺正，脫離圓盤跟隨鼠標
+                        if (currentY < -20) {
+                            // 解除 rotate(var(--rot))，並端正放大
+                            event.target.style.transform = `translate(calc(-50% + ${currentX/globalScale}px), calc(0 + ${currentY/globalScale}px)) rotate(0deg) scale(1.15)`;
+                        }
+                    },
+                    end(event) {
+                        if (isSpinningWheel) {
+                            isSpinningWheel = false;
+                            return;
+                        }
+                        if (!dragStarted) return;
+                        dragStarted = false;
+                        
+                        event.target.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)'; // 恢復動畫
+                        
+                        // 成功上桌判定（拉動超過一定高度）
+                        if (currentY < -60) {
+                            const rect = event.target.getBoundingClientRect();
+                            // 🌟 此時將層級提升，確保自由拖拽
+                            createCardOnDesk(actualIndex, rect.left / globalScale, rect.top / globalScale);
+                        } else {
+                            // 失敗則彈回激活動位置
+                            currentX = 0; currentY = 0;
+                            event.target.style.transform = ''; 
+                        }
+                    }
+                }
+            });
+
+            element.addEventListener('contextmenu', e => e.preventDefault());
+        }
+
+        // 🌟 初始化選單與基本互動
         document.getElementById('menu-btn').addEventListener('click', () => sidebar.classList.toggle('open'));
         document.body.addEventListener('click', (e) => { if(!sidebar.contains(e.target) && e.target.id !== 'menu-btn') sidebar.classList.remove('open'); }, true);
         document.getElementById('open-settings-btn').addEventListener('click', () => { modalOverlay.style.display = 'flex'; sidebar.classList.remove('open'); });
         document.getElementById('modal-close-btn').addEventListener('click', () => modalOverlay.style.display = 'none');
-
         document.getElementById('zoom-in-btn').addEventListener('click', () => { if (globalScale < 1.8) { globalScale += 0.1; applyZoom(); } });
         document.getElementById('zoom-out-btn').addEventListener('click', () => { if (globalScale > 0.5) { globalScale -= 0.1; applyZoom(); } });
         function applyZoom() { zoomContainer.style.transform = `scale(${globalScale})`; }
+
+        // 點擊桌面空處時，自動縮回底下所有激活動牌
+        document.getElementById('desk').addEventListener('click', () => {
+            document.querySelectorAll('.fan-card').forEach(c => c.classList.remove('active'));
+        });
 
         document.querySelectorAll('.switch-btn').forEach(btn => {
             btn.addEventListener('click', function() {
@@ -297,9 +458,7 @@
                 this.classList.toggle('on', settings[settingKey]);
                 if(settingKey === 'counter') {
                     document.getElementById('counter-board').style.display = settings.counter ? 'flex' : 'none';
-                } else {
-                    resetTable();
-                }
+                } else { resetTable(); }
             });
         });
 
@@ -324,123 +483,6 @@
             currentActiveDeck = tempCards; cardIndexInput.max = currentActiveDeck.length; updateCounters();
         }
 
-        // 🌟 核心修正：全體生成，抽出的卡牌原地隱形，永久留下完美實感缺口
-        function renderDeckFan() {
-            deckFanContainer.innerHTML = '';
-            const totalCards = currentActiveDeck.length;
-            if (totalCards === 0) return;
-
-            // 微調扇形跨距與間距
-            const maxSpreadAngle = window.innerWidth < 768 ? 48 : 38; 
-            const angleStep = (maxSpreadAngle * 2) / (totalCards - 1 || 1);
-            
-            for (let i = 0; i < totalCards; i++) {
-                const fanCard = document.createElement('div');
-                fanCard.classList.add('fan-card');
-                fanCard.style.backgroundImage = `url('${currentActiveBack}')`;
-                fanCard.style.zIndex = i;
-                
-                // 永久綁定固定數字不變
-                fanCard.setAttribute('data-display-index', i + 1);
-                
-                // 永久固定旋轉角度
-                const currentAngle = -maxSpreadAngle + (i * angleStep);
-                fanCard.style.setProperty('--rot', `${currentAngle}deg`);
-                
-                // 🌟 如果已經被抽上桌，不重新排版，直接隱形留下空缺！
-                if (onDeskCards.includes(i)) {
-                    fanCard.classList.add('drawn');
-                } else {
-                    makeFanCardInteractive(fanCard, i);
-                }
-                
-                deckFanContainer.appendChild(fanCard);
-            }
-            // 初始化時將滾動軸居中，方便兩邊撥弄
-            if(!scrollWrapper.dataset.initScroll) {
-                scrollWrapper.scrollLeft = (scrollWrapper.scrollWidth - window.innerWidth) / 2;
-                scrollWrapper.dataset.initScroll = "true";
-            }
-        }
-
-        // 🌟 核心重構：兩階段觸發邏輯（點擊彈起顯示數字 ➔ 再次按住往上拖拽上桌）
-        function makeFanCardInteractive(element, actualIndex) {
-            let currentX = 0; let currentY = 0;
-            let dragStarted = false;
-
-            // 1. 點擊/觸碰事件：負責切換彈起狀態（Popped）
-            element.addEventListener('click', (e) => {
-                e.stopPropagation();
-                // 如果已經彈起，再次點擊就縮回
-                if (element.classList.contains('popped')) {
-                    element.classList.remove('popped');
-                } else {
-                    // 先清除其他卡牌的彈起狀態
-                    document.querySelectorAll('.fan-card').forEach(c => c.classList.remove('popped'));
-                    element.classList.add('popped');
-                }
-            });
-
-            // 2. 拖拽事件：只有在已經「彈起 (popped)」的情況下才允許拖上桌
-            interact(element).draggable({
-                listeners: {
-                    start(event) {
-                        // 如果這張牌還沒點擊彈起，禁止拖拽抽牌（讓位給 wrapper 滾動）
-                        if (!event.target.classList.contains('popped')) {
-                            dragStarted = false;
-                            return;
-                        }
-                        dragStarted = true;
-                        event.target.style.transition = 'none';
-                    },
-                    move(event) {
-                        if (!dragStarted) return;
-                        currentX += event.dx; currentY += event.dy;
-                        
-                        // 往上拉出一定高度後，卡牌擺正，脫離圓盤跟隨鼠標
-                        if (currentY < -20) {
-                            event.target.style.transform = `translate(calc(-50% + ${currentX/globalScale}px), calc(50% + ${currentY/globalScale}px)) rotate(0deg) scale(1.1)`;
-                        }
-                    },
-                    end(event) {
-                        if (!dragStarted) return;
-                        event.target.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
-                        
-                        // 成功上桌判定（拉動超過 60px）
-                        if (currentY < -60) {
-                            const rect = event.target.getBoundingClientRect();
-                            createCardOnDesk(actualIndex, rect.left / globalScale, rect.top / globalScale);
-                        } else {
-                            // 失敗則絲滑彈回「已彈起」的高度
-                            currentX = 0; currentY = 0;
-                            event.target.style.transform = '';
-                        }
-                    }
-                }
-            });
-
-            element.addEventListener('contextmenu', e => e.preventDefault());
-        }
-
-        // 點擊桌面空處時，自動縮回底下所有彈起的牌
-        document.getElementById('desk').addEventListener('click', () => {
-            document.querySelectorAll('.fan-card').forEach(c => c.classList.remove('popped'));
-        });
-
-        // 電腦端支援滑鼠按住左右拖弄滾動
-        let isDown = false; let startX; let scrollLeft;
-        scrollWrapper.addEventListener('mousedown', (e) => {
-            if(e.target.classList.contains('fan-card')) return; // 點到牌不觸發外殼拖拽
-            isDown = true; startX = e.pageX - scrollWrapper.offsetLeft; scrollLeft = scrollWrapper.scrollLeft;
-        });
-        scrollWrapper.addEventListener('mouseleave', () => isDown = false);
-        scrollWrapper.addEventListener('mouseup', () => isDown = false);
-        scrollWrapper.addEventListener('mousemove', (e) => {
-            if(!isDown) return; e.preventDefault();
-            const x = e.pageX - scrollWrapper.offsetLeft; const walk = (x - startX) * 1.5;
-            scrollWrapper.scrollLeft = scrollLeft - walk;
-        });
-
         function updateCounters() {
             document.getElementById('count-desk').textContent = onDeskCards.length;
             document.getElementById('count-remain').textContent = currentActiveDeck.length - onDeskCards.length;
@@ -448,7 +490,7 @@
 
         function resetTable() { 
             desk.innerHTML = ''; onDeskCards = []; 
-            delete scrollWrapper.dataset.initScroll;
+            currentWheelAngle = 0; deckFanContainer.style.transform = `translateX(-50%) rotate(0deg)`;
             buildDeck(); renderDeckFan(); 
         }
         document.getElementById('deck-select').addEventListener('change', resetTable);
@@ -464,11 +506,10 @@
             return cardPlaceHolder;
         }
 
+        // 🌟 修正：創立自由拖拽卡牌上桌，手機電腦皆可滑動
         function createCardOnDesk(arrayIndex, customX = null, customY = null) {
             if (onDeskCards.includes(arrayIndex)) return;
-            onDeskCards.push(arrayIndex); 
-            updateCounters(); 
-            renderDeckFan(); // 刷新以隱形抽走的卡牌
+            onDeskCards.push(arrayIndex); updateCounters(); renderDeckFan(); 
 
             const finalCardName = getRealCardName(arrayIndex);
             const frontImg = currentActiveBaseUrl + encodeURIComponent(finalCardName);
@@ -478,17 +519,16 @@
             const isReversed = settings.reverse && Math.random() > 0.5;
             if (isReversed) card.classList.add('is-reversed');
 
-            card.innerHTML = `
-                <div class="card-inner">
-                    <div class="card-face card-back" style="background-image: url('${currentActiveBack}')"></div>
-                    <div class="card-face card-front" style="background-image: url('${frontImg}')"></div>
-                </div>
-            `;
+            card.innerHTML = `<div class="card-inner"><div class="card-face card-back" style="background-image: url('${currentActiveBack}')"></div><div class="card-face card-front" style="background-image: url('${frontImg}')"></div></div>`;
             
+            // 計算置中偏移
             const offsetW = window.innerWidth < 768 ? 47 : 34;
+            // 🌟 核心修正：將桌面上卡牌放到 desk 容器內，並給予獨立的高層級
             card.style.left = customX !== null ? `${customX}px` : `${window.innerWidth / 2 - offsetW}px`;
             card.style.top = customY !== null ? `${customY}px` : `${window.innerHeight / 3}px`;
+            
             desk.appendChild(card);
+            // 🌟 修正：開啟桌面自由拖拽
             makeDeskCardInteractive(card);
         }
 
@@ -498,8 +538,11 @@
             createCardOnDesk(num - 1); sidebar.classList.remove('open');
         });
 
+        // 🌟 開啟桌面卡牌自由拖拽與點擊翻面（手機電腦皆通用）
         function makeDeskCardInteractive(element) {
             let x = 0; let y = 0; let isDragging = false;
+            
+            // interact.js 處理電腦滑鼠與手機觸控的自由拖拽
             interact(element).draggable({
                 listeners: {
                     start(event) { event.target.style.zIndex = Date.now(); isDragging = true; },
@@ -507,7 +550,10 @@
                     end(event) { setTimeout(() => { isDragging = false; }, 50); }
                 }
             });
+
+            // 處理翻面：只有在沒有拖拽時才觸發翻面
             element.addEventListener('click', () => { if (!isDragging) element.classList.toggle('is-flipped'); });
+            // 手機端特定處理，防止觸控結束觸發 click
             element.addEventListener('touchend', (e) => { if (!isDragging) { e.preventDefault(); element.classList.toggle('is-flipped'); } });
         }
 
