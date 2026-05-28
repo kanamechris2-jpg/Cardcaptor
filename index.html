@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>魔法占卜桌 - 占星貓圓盤版</title>
+    <title>魔法占卜桌 - 實感優化版</title>
     <style>
         :root {
             --primary: #ff79c6;
@@ -11,30 +11,28 @@
             --gold: #ffb86c;
             --global-scale: 1;
             
-            /* 💻 電腦版尺寸基準 */
+            /* 💻 電腦版尺寸與圓盤參數 */
             --card-w: 68px;
             --card-h: 128px;
-            --fan-card-w: 58px;
-            --fan-card-h: 110px;
-            --wheel-radius: 120vw; /* 巨大圓盤半徑 */
-            --wheel-bottom: -112vw; /* 將圓心壓在螢幕下方 */
+            --fan-card-w: 62px;   /* 微調寬度創造空隙 */
+            --fan-card-h: 115px;
+            --wheel-radius: 125vw; 
+            --wheel-bottom: -116vw; 
         }
 
-        /* 📱 手機版專屬樣式（自動切換大卡牌與完美弧度） */
         @media (max-width: 767px) {
             :root {
                 --card-w: 95px;
                 --card-h: 180px;
-                --fan-card-w: 76px;
+                --fan-card-w: 78px;
                 --fan-card-h: 150px;
-                --wheel-radius: 130vw;
-                --wheel-bottom: -118vw;
+                --wheel-radius: 135vw;
+                --wheel-bottom: -122vw;
             }
         }
 
         body {
             margin: 0; padding: 0;
-            /* 🌟 完美綁定你倉庫中的 6135163.png 占卜桌布 */
             background-image: url('6135163.png');
             background-size: cover;
             background-position: center center;
@@ -45,10 +43,9 @@
             user-select: none; -webkit-user-select: none;
         }
 
-        /* 暗色濾鏡稍微沉澱背景，讓庫洛牌魔法陣更立體 */
         body::before {
             content: ''; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(26, 9, 51, 0.15); z-index: 1; pointer-events: none;
+            background: rgba(26, 9, 51, 0.12); z-index: 1; pointer-events: none;
         }
 
         #zoom-container {
@@ -58,7 +55,6 @@
             transition: transform 0.2s ease-out;
         }
 
-        /* 頂部功能鈕 */
         #top-bar { position: fixed; top: 15px; right: 15px; z-index: 2000; display: flex; gap: 10px; }
         .icon-btn {
             background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(8px);
@@ -68,7 +64,6 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: all 0.2s;
         }
 
-        /* 記牌器看板 */
         #counter-board {
             position: fixed; top: 15px; left: 15px; z-index: 2000;
             background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px);
@@ -78,7 +73,6 @@
         }
         #counter-board span { color: var(--gold); font-weight: bold; }
 
-        /* 側邊設定欄 */
         #sidebar {
             position: fixed; top: 0; right: -280px; width: 260px; height: 100vh;
             background: var(--panel-bg); backdrop-filter: blur(15px);
@@ -96,7 +90,6 @@
         }
         .side-btn { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 10px; }
 
-        /* 彈出設定 */
         #modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.4); z-index: 3000; display: none; align-items: center; justify-content: center; }
         #setting-modal { background: #e2d6b5; color: #4a2e1b; width: 300px; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); position: relative; border: 2px solid #bda47e; font-weight: 500; }
         .modal-close { position: absolute; top: 12px; right: 15px; font-size: 20px; cursor: pointer; font-weight: bold; color: #8b0000; }
@@ -105,10 +98,8 @@
         .switch-btn { background: #ccc; border: 1px solid #999; padding: 4px 10px; border-radius: 12px; font-size: 11px; cursor: pointer; font-weight: bold; color: #666; }
         .switch-btn.on { background: #722f37; color: white; }
 
-        /* 桌面區域 */
         #desk { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 10; }
 
-        /* 桌面放置後的卡牌樣式 */
         .card { width: var(--card-w); height: var(--card-h); position: absolute; perspective: 1000px; touch-action: none; cursor: grab; z-index: 20; }
         .card-inner { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
         .card.is-flipped .card-inner { transform: rotateY(180deg); }
@@ -117,7 +108,7 @@
         .card-back { background-color: #8b1e3f; }
         .card-front { transform: rotateY(180deg); }
 
-        /* 🌟 占星貓同款：底部隱形巨大圓盤容器（完全絕不切邊、無死角、無空隙） */
+        /* 🌟 底部隱形圓盤區域：開放滑動與溢出監聽 */
         #deck-fan-container {
             position: fixed; 
             bottom: var(--wheel-bottom); 
@@ -126,13 +117,13 @@
             height: var(--wheel-radius); 
             transform: translateX(-50%);
             z-index: 100; 
-            pointer-events: none; /* 讓容器不阻擋桌面點擊 */
+            pointer-events: none;
         }
         
-        /* 🌟 圓盤發散的卡牌本體 */
+        /* 🌟 扇形卡牌：移除純 CSS Hover，改由 JS 精確控制 */
         .fan-card {
             position: absolute;
-            bottom: 50%; /* 以隱形圓盤的中心點為旋轉基準 */
+            bottom: 50%; 
             left: 50%;
             width: var(--fan-card-w); 
             height: var(--fan-card-h); 
@@ -140,25 +131,26 @@
             background-position: center;
             border: 2px solid var(--gold); 
             border-radius: 6px; 
-            box-shadow: 0 -4px 12px rgba(0,0,0,0.6); 
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.5); 
             touch-action: none;
-            pointer-events: auto; /* 讓卡片本身可以被抓取 */
+            pointer-events: auto; 
+            cursor: pointer;
             
-            /* 核心旋轉：卡牌擺正，並將旋轉中心設在隱形圓盤的圓心位置 */
+            /* 精確圓心旋轉基準 */
             transform-origin: center calc(var(--wheel-radius) / 2);
+            /* 預設初始狀態位置 */
             transform: translate(-50%, 50%) rotate(var(--rot)) translateY(calc(var(--wheel-radius) / -2));
-            transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+            transition: transform 0.15s ease-out;
         }
         
-        /* 🌟 當手指按住或滑鼠懸停時的高亮放大與推高效果 */
-        .fan-card:hover, .fan-card:active {
+        /* 🌟 點擊/選取激活狀態（彈出且不抖動） */
+        .fan-card.active {
             z-index: 9999 !important; 
-            /* 保持原角度旋轉的同時，往卡牌正上方平移突破，並放大 1.2 倍 */
-            transform: translate(-50%, 50%) rotate(var(--rot)) translateY(calc((var(--wheel-radius) / -2) - 45px)) scale(1.2) !important;
+            transform: translate(-50%, 50%) rotate(var(--rot)) translateY(calc((var(--wheel-radius) / -2) - 45px)) scale(1.18) !important;
         }
 
-        /* 🌟 數字完美出現在卡片正上方（絕對不會被切掉） */
-        .fan-card:hover::after, .fan-card:active::after {
+        /* 🌟 數字樣式調整，確保完美浮現 */
+        .fan-card.active::after {
             content: attr(data-display-index);
             position: absolute; 
             top: -45px; 
@@ -167,7 +159,6 @@
             color: #ffffff; 
             font-size: 26px; 
             font-weight: bold; 
-            font-family: -apple-system, sans-serif;
             text-shadow: 0 2px 8px rgba(0,0,0,0.9), 0 0 4px rgba(0,0,0,0.5); 
             pointer-events: none;
             z-index: 10000;
@@ -317,15 +308,19 @@
             currentActiveDeck = tempCards; cardIndexInput.max = currentActiveDeck.length; updateCounters();
         }
 
+        // 🌟 核心修正：動態剔除已被抽出的卡片，並且留出完美空隙
         function renderDeckFan() {
             deckFanContainer.innerHTML = '';
             let availableIndices = [];
-            for (let i = 0; i < currentActiveDeck.length; i++) { if (!onDeskCards.includes(i)) availableIndices.push(i); }
+            // 如果某個 index 已經在桌面上，就完全不放入 availableIndices
+            for (let i = 0; i < currentActiveDeck.length; i++) { 
+                if (!onDeskCards.includes(i)) availableIndices.push(i); 
+            }
             const totalAvailable = availableIndices.length;
             if (totalAvailable === 0) return;
 
-            // 🌟 核心公式：動態精確計算旋轉角度，確保第一張和最後一張牌死死黏在螢幕邊緣
-            const maxSpreadAngle = window.innerWidth < 768 ? 42 : 32; 
+            // 微調扇形開角大小，創造卡牌之間的實感間距
+            const maxSpreadAngle = window.innerWidth < 768 ? 44 : 34; 
             const angleStep = (maxSpreadAngle * 2) / (totalAvailable - 1 || 1);
             
             for (let i = 0; i < totalAvailable; i++) {
@@ -334,42 +329,58 @@
                 fanCard.classList.add('fan-card');
                 fanCard.style.backgroundImage = `url('${currentActiveBack}')`;
                 fanCard.style.zIndex = i;
-                // 占星貓倒數計數（最右邊是最後一張）
-                fanCard.setAttribute('data-display-index', totalAvailable - i);
                 
-                // 計算每張牌的角度（從左至右順暢鋪滿）
+                // 🌟 真實精確的獨立數字對應（卡牌抽出後，剩餘的牌會重新對齊編號）
+                fanCard.setAttribute('data-display-index', actualIndex + 1);
+                
                 const currentAngle = -maxSpreadAngle + (i * angleStep);
                 fanCard.style.setProperty('--rot', `${currentAngle}deg`);
+                
                 makeFanCardDraggable(fanCard, actualIndex);
                 deckFanContainer.appendChild(fanCard);
             }
         }
 
+        // 🌟 核心修正：點擊按住才浮現並推高，支援手機滑動抽牌與電腦拉拽
         function makeFanCardDraggable(element, actualIndex) {
             let currentX = 0; let currentY = 0;
-            const originalTransform = element.style.transform;
-            const currentRot = element.style.getPropertyValue('--rot');
+            let isActivated = false; // 必須點擊/按住才變為 True
 
             interact(element).draggable({
                 listeners: {
+                    start(event) {
+                        // 鼠標或手指按下的那一刻，立刻激活動態推高與顯現大數字
+                        isActivated = true;
+                        event.target.classList.add('active');
+                    },
                     move(event) {
+                        if (!isActivated) return;
                         currentX += event.dx; currentY += event.dy;
-                        // 抽牌時脫離圓盤，轉回 0 度正位移動
-                        event.target.style.transform = `translate(calc(-50% + ${currentX/globalScale}px), calc(50% + ${currentY/globalScale}px)) rotate(0deg) scale(1.1)`;
-                        event.target.style.zIndex = 9999;
+                        
+                        // 往上拉出一定距離時，解除圓盤鎖定，牌面擺正跟隨鼠標/手指
+                        if (currentY < -30) {
+                            event.target.style.transform = `translate(calc(-50% + ${currentX/globalScale}px), calc(50% + ${currentY/globalScale}px)) rotate(0deg) scale(1.1)`;
+                        }
                     },
                     end(event) {
-                        // 往上滑動超過 70px 視為抽出發牌
-                        if (currentY < -70) {
+                        isActivated = false;
+                        event.target.classList.remove('active');
+                        
+                        // 判定是否成功抽出（向上拖曳超過 65px）
+                        if (currentY < -65) {
                             const rect = event.target.getBoundingClientRect();
                             createCardOnDesk(actualIndex, rect.left / globalScale, rect.top / globalScale);
                         } else { 
+                            // 沒抽成功則絲滑彈回原位
                             event.target.style.transform = ''; 
                             renderDeckFan(); 
                         }
                     }
                 }
             });
+
+            // 防止行動端長按彈出選單影響體驗
+            element.addEventListener('contextmenu', e => e.preventDefault());
         }
 
         function updateCounters() {
@@ -393,7 +404,9 @@
 
         function createCardOnDesk(arrayIndex, customX = null, customY = null) {
             if (onDeskCards.includes(arrayIndex)) return;
-            onDeskCards.push(arrayIndex); updateCounters(); renderDeckFan(); 
+            onDeskCards.push(arrayIndex); 
+            updateCounters(); 
+            renderDeckFan(); // 🌟 抽出後立刻重繪牌堆，把該編號與卡片從底下剔除
 
             const finalCardName = getRealCardName(arrayIndex);
             const frontImg = currentActiveBaseUrl + encodeURIComponent(finalCardName);
