@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>魔法占卜桌 - 完美修復版</title>
+    <title>魔法占卜桌 - 底部輪盤完美版</title>
     <style>
         :root {
             --primary: #ff79c6;
@@ -11,22 +11,22 @@
             --gold: #ffb86c;
             --global-scale: 1;
             
-            /* 💻 預設電腦版尺寸（使用固定 px，拒絕萬惡的 vw/vh 飄移） */
+            /* 💻 預設電腦版尺寸 */
             --card-w: 70px;
             --card-h: 130px;
             --fan-card-w: 65px;   
             --fan-card-h: 120px;
-            --wheel-radius: 900px; /* 固定的超大隱形圓盤半徑 */
+            --wheel-radius: 900px; /* 隱形大圓盤半徑 */
         }
 
-        /* 📱 手機版專屬微調（依然保持固定 px 錨定） */
+        /* 📱 手機版專屬微調 */
         @media (max-width: 767px) {
             :root {
                 --card-w: 95px;
                 --card-h: 180px;
                 --fan-card-w: 80px;
                 --fan-card-h: 150px;
-                --wheel-radius: 700px; /* 手機上圓盤半徑稍微縮小，弧度更貼合手機底部 */
+                --wheel-radius: 650px; /* 手機上圓盤半徑稍微縮小，讓底部弧度更明顯 */
             }
         }
 
@@ -136,15 +136,16 @@
         .card-back { background-color: #8b1e3f; }
         .card-front { transform: rotateY(180deg); }
 
-        /* 🌟【關鍵修復】巨大隱形圓盤容器 —— 永遠將圓心固定在螢幕下緣 */
+        /* 🌟【極重要修復】將圓盤中心點精確固定在螢幕「底部」下方 */
         #deck-fan-container {
             position: fixed; 
-            /* 圓心精確鎖定：y軸永遠在螢幕底線下方 (半徑 - 40px) 的位置，確保不論螢幕多寬都不會往上亂飛 */
-            bottom: calc(var(--wheel-radius) * -1 + 40px); 
+            top: calc(100vh - 55px); /* 圓心精確定位在螢幕底線下方 55px */
             left: 50%; 
             width: calc(var(--wheel-radius) * 2); 
             height: calc(var(--wheel-radius) * 2); 
-            transform: translateX(-50%) rotate(0deg); 
+            /* 將旋轉中心和位移錨定在正中央 */
+            transform: translate(-50%, -50%) rotate(0deg); 
+            transform-origin: center center;
             z-index: 100; 
             pointer-events: none; 
             will-change: transform;
@@ -154,8 +155,8 @@
         /* 圓盤上的發散卡牌 */
         .fan-card {
             position: absolute;
-            transform-origin: center center; /* 繞著大圓盤中心旋轉 */
-            top: 0; left: 50%;
+            transform-origin: center center; 
+            top: 50%; left: 50%; /* 從圓盤正中心點出發 */
             width: var(--fan-card-w); height: var(--fan-card-h); 
             background-size: cover; background-position: center;
             border: 2px solid var(--gold); border-radius: 6px; 
@@ -164,16 +165,16 @@
             pointer-events: auto; 
             cursor: pointer;
             
-            /* 將卡片推至大圓盤的外邊緣，並套用初始扇形角度 */
-            transform: translate(-50%, 0) rotate(var(--rot)) translateY(25px);
+            /* 🌟 將卡片垂直往上推到大圓盤的頂部邊緣，再套用初始發散角度 */
+            transform: translate(-50%, -50%) rotate(var(--rot)) translateY(calc(var(--wheel-radius) * -1 + 20px));
             transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1);
         }
         
-        /* 🌟【彈起修復】卡牌被單擊激活時的狀態 */
+        /* 🌟【彈起修復】卡牌被點擊激活時的狀態 */
         .fan-card.active {
             z-index: 9999 !important; 
-            /* 往上彈出，同時抵消旋轉角度擺正，並且向上多平移，確保數字和卡面在任何裝置都不會被切掉 */
-            transform: translate(-50%, 0) rotate(var(--rot)) translateY(-70px) rotate(calc(var(--rot) * -1)) scale(1.2) !important;
+            /* 往螢幕中心平移拉近（更往上彈出），抵消旋轉角度轉正，並稍微放大 */
+            transform: translate(-50%, -50%) rotate(var(--rot)) translateY(calc(var(--wheel-radius) * -1 - 65px)) rotate(calc(var(--rot) * -1)) scale(1.2) !important;
         }
 
         /* 完美浮現在卡片頭頂的獨立數字 */
@@ -197,9 +198,9 @@
             pointer-events: none !important;
         }
         
-        /* 接管底部觸控/滑鼠劃動的隱形感應區（調高高度至220px確保好滑） */
+        /* 接收底部滑動的隱形感應區 */
         #wheel-touch-zone {
-            position: fixed; bottom: 0; left: 0; width: 100vw; height: 220px; z-index: 90; pointer-events: auto;
+            position: fixed; bottom: 0; left: 0; width: 100vw; height: 200px; z-index: 90; pointer-events: auto;
         }
     </style>
 </head>
@@ -283,7 +284,7 @@
         let wheelStartAngle = 0;
         let wheelStartX = 0;
 
-        // 接管底部區域的拖曳，轉化為繞圓心的物理旋轉
+        // 接管底部滑動，轉為物理旋轉
         interact(touchZone).draggable({
             listeners: {
                 start(event) {
@@ -293,13 +294,12 @@
                 },
                 move(event) {
                     if (!isSpinningWheel) return;
-                    // 電腦端與手機端敏感度微調
-                    const pxToDegRate = window.innerWidth < 768 ? 0.32 : 0.15;
+                    const pxToDegRate = window.innerWidth < 768 ? 0.35 : 0.16;
                     const deltaX = event.pageX - wheelStartX;
                     currentWheelAngle = wheelStartAngle + (deltaX * pxToDegRate);
                     
-                    // 核心物理轉動
-                    deckFanContainer.style.transform = `translateX(-50%) rotate(${currentWheelAngle}deg)`;
+                    // 🌟 旋轉大輪盤
+                    deckFanContainer.style.transform = `translate(-50%, -50%) rotate(${currentWheelAngle}deg)`;
                 },
                 end() { isSpinningWheel = false; }
             }
@@ -310,10 +310,13 @@
             const totalCards = currentActiveDeck.length;
             if (totalCards === 0) return;
 
-            // 調整扇形發散弧度，電腦版與手機版均勻鋪開
-            const maxSpreadAngle = window.innerWidth < 768 ? 62 : 42; 
+            const maxSpreadAngle = window.innerWidth < 768 ? 50 : 32; 
             const angleStep = (maxSpreadAngle * 2) / (totalCards - 1 || 1);
             
+            // 讀取當前的大圓盤半徑
+            const rootStyles = getComputedStyle(document.documentElement);
+            const wheelRadius = parseInt(rootStyles.getPropertyValue('--wheel-radius'));
+
             for (let i = 0; i < totalCards; i++) {
                 const fanCard = document.createElement('div');
                 fanCard.classList.add('fan-card');
@@ -339,7 +342,6 @@
             let currentX = 0; let currentY = 0;
             let dragStarted = false;
 
-            // 1. 點擊彈起/縮回
             element.addEventListener('click', (e) => {
                 e.stopPropagation();
                 if (isSpinningWheel) return;
@@ -352,7 +354,6 @@
                 }
             });
 
-            // 2. 處理從彈起狀態拉上桌面的手感
             interact(element).draggable({
                 listeners: {
                     start(event) {
@@ -369,19 +370,19 @@
                     },
                     move(event) {
                         if (isSpinningWheel) {
-                            const pxToDegRate = window.innerWidth < 768 ? 0.32 : 0.15;
+                            const pxToDegRate = window.innerWidth < 768 ? 0.35 : 0.16;
                             const deltaX = event.pageX - wheelStartX;
                             currentWheelAngle = wheelStartAngle + (deltaX * pxToDegRate);
-                            deckFanContainer.style.transform = `translateX(-50%) rotate(${currentWheelAngle}deg)`;
+                            deckFanContainer.style.transform = `translate(-50%, -50%) rotate(${currentWheelAngle}deg)`;
                             return;
                         }
 
                         if (!dragStarted) return;
                         currentX += event.dx; currentY += event.dy;
                         
-                        // 往上拉出圓盤邊界後，卡牌自動轉正跟隨手指
                         if (currentY < -15) {
-                            event.target.style.transform = `translate(calc(-50% + ${currentX/globalScale}px), calc(0px + ${currentY/globalScale}px)) rotate(0deg) scale(1.15)`;
+                            // 🌟 拖拽拉出底部時，將卡牌擺正
+                            event.target.style.transform = `translate(calc(-50% + ${currentX/globalScale}px), calc(-50% + ${currentY/globalScale}px)) rotate(0deg) scale(1.15)`;
                         }
                     },
                     end(event) {
@@ -391,8 +392,7 @@
                         
                         event.target.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
                         
-                        // 成功上桌觸發門檻
-                        if (currentY < -60) {
+                        if (currentY < -70) {
                             const rect = event.target.getBoundingClientRect();
                             createCardOnDesk(actualIndex, rect.left / globalScale, rect.top / globalScale);
                         } else {
@@ -406,12 +406,10 @@
             element.addEventListener('contextmenu', e => e.preventDefault());
         }
 
-        // 點擊桌面空白處收回全部彈起的牌
         document.getElementById('desk').addEventListener('click', () => {
             document.querySelectorAll('.fan-card').forEach(c => c.classList.remove('active'));
         });
 
-        // 選單及縮放控制
         document.getElementById('menu-btn').addEventListener('click', () => sidebar.classList.toggle('open'));
         document.body.addEventListener('click', (e) => { if(!sidebar.contains(e.target) && e.target.id !== 'menu-btn') sidebar.classList.remove('open'); }, true);
         document.getElementById('open-settings-btn').addEventListener('click', () => { modalOverlay.style.display = 'flex'; sidebar.classList.remove('open'); });
@@ -460,7 +458,7 @@
 
         function resetTable() { 
             desk.innerHTML = ''; onDeskCards = []; 
-            currentWheelAngle = 0; deckFanContainer.style.transform = `translateX(-50%) rotate(0deg)`;
+            currentWheelAngle = 0; deckFanContainer.style.transform = `translate(-50%, -50%) rotate(0deg)`;
             buildDeck(); renderDeckFan(); 
         }
         document.getElementById('deck-select').addEventListener('change', resetTable);
@@ -476,7 +474,6 @@
             return cardPlaceHolder;
         }
 
-        // 生成桌面卡牌，確保完美自由拖曳
         function createCardOnDesk(arrayIndex, customX = null, customY = null) {
             if (onDeskCards.includes(arrayIndex)) return;
             onDeskCards.push(arrayIndex); updateCounters(); renderDeckFan(); 
@@ -505,11 +502,9 @@
             createCardOnDesk(num - 1); sidebar.classList.remove('open');
         });
 
-        // 🌟【核心修復】完全解鎖桌面卡牌互動（支援手機多點觸控與電腦滑鼠）
         function makeDeskCardInteractive(element) {
             let x = 0; let y = 0; let isDragging = false;
             
-            // 修正：動態重設初始 transform 的平移量
             const matrix = window.getComputedStyle(element).transform;
             if (matrix && matrix !== 'none') {
                 const values = matrix.split('(')[1].split(')')[0].split(',');
@@ -520,31 +515,14 @@
             interact(element).draggable({
                 inertia: true,
                 listeners: {
-                    start(event) { 
-                        event.target.style.zIndex = Date.now(); 
-                        isDragging = true; 
-                    },
-                    move(event) { 
-                        x += event.dx; 
-                        y += event.dy; 
-                        event.target.style.transform = `translate(${x/globalScale}px, ${y/globalScale}px)`; 
-                    },
-                    end(event) { 
-                        setTimeout(() => { isDragging = false; }, 60); 
-                    }
+                    start(event) { event.target.style.zIndex = Date.now(); isDragging = true; },
+                    move(event) { x += event.dx; y += event.dy; event.target.style.transform = `translate(${x/globalScale}px, ${y/globalScale}px)`; },
+                    end(event) { setTimeout(() => { isDragging = false; }, 60); }
                 }
             });
 
-            // 點擊翻牌
-            element.addEventListener('click', (e) => { 
-                if (!isDragging) element.classList.toggle('is-flipped'); 
-            });
-            element.addEventListener('touchend', (e) => { 
-                if (!isDragging) { 
-                    e.preventDefault(); 
-                    element.classList.toggle('is-flipped'); 
-                } 
-            });
+            element.addEventListener('click', () => { if (!isDragging) element.classList.toggle('is-flipped'); });
+            element.addEventListener('touchend', (e) => { if (!isDragging) { e.preventDefault(); element.classList.toggle('is-flipped'); } });
         }
 
         buildDeck(); renderDeckFan();
